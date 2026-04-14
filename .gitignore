@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor directories
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Other projects in this folder (won't be included in PropNest repo)
+DeepSeek-Coder-V2-main/
+DeepSeek-Coder-main/
+DeepSeek-LLM-main/
+ai_trading_app/
+trae\ apps/
+claude\ apps\ /
+algo\ trading\ by\ claude\ 4/

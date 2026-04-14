@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PropNest — Find Your Perfect Property</title>
+  <meta name="description" content="PropNest is your go-to platform to post and discover property leads for rent, sale, and purchase across India. Find flats, villas, plots, and more." />
+  <meta name="keywords" content="property rent, property sale, buy house, real estate India, flat for rent, apartment for sale" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════
+       AUTH SCREEN
+  ══════════════════════════════════════ -->
+  <div id="authScreen" class="auth-screen" role="dialog" aria-modal="true" aria-label="Login or Sign Up">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="logo-icon" aria-hidden="true">🏠</div>
+        <span>PropNest</span>
+      </div>
+      <p class="auth-tagline">Find your dream property or post a lead</p>
+
+      <div class="auth-tab-switch" role="tablist">
+        <button class="auth-tab-btn active" id="loginTabBtn" role="tab" aria-selected="true">Login</button>
+        <button class="auth-tab-btn" id="signupTabBtn" role="tab" aria-selected="false">Sign Up</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" class="auth-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address</label>
+          <input class="form-input" type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <div class="password-wrap">
+            <input class="form-input" type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" required />
+            <button type="button" class="password-toggle" id="loginPassToggle" aria-label="Toggle password visibility">👁</button>
+          </div>
+        </div>
+        <div class="auth-error" id="loginError" role="alert"></div>
+        <button type="submit" class="btn-auth-submit" id="loginSubmit">Login →</button>
+      </form>
+
+      <!-- SIGN UP FORM -->
+      <form id="signupForm" class="auth-form" novalidate style="display:none;">
+        <div class="form-group">
+          <label class="form-label" for="signupName">Full Name</label>
+          <input class="form-input" type="text" id="signupName" placeholder="Your full name" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signupEmail">Email Address</label>
+          <input class="form-input" type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signupPassword">Password</label>
+          <div class="password-wrap">
+            <input class="form-input" type="password" id="signupPassword" placeholder="Min. 6 characters" autocomplete="new-password" required />
+            <button type="button" class="password-toggle" id="signupPassToggle" aria-label="Toggle password visibility">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">I am a…</label>
+          <div class="role-selector-auth" id="roleSelector" role="group" aria-label="Select your role">
+            <button type="button" class="role-card selected" data-role="user" id="roleCardUser">
+              <span class="role-card-icon">👤</span>
+              <span class="role-card-title">Normal User</span>
+              <span class="role-card-desc">Browse &amp; post buy inquiries</span>
+            </button>
+            <button type="button" class="role-card" data-role="agent" id="roleCardAgent">
+              <span class="role-card-icon">🏢</span>
+              <span class="role-card-title">Real Estate Agent</span>
+              <span class="role-card-desc">Post &amp; manage property leads</span>
+            </button>
+          </div>
+        </div>
+        <div class="auth-error" id="signupError" role="alert"></div>
+        <button type="submit" class="btn-auth-submit" id="signupSubmit">Create Account →</button>
+      </form>
+
+      <div class="auth-divider"><span>or try a demo account</span></div>
+      <div class="demo-accounts" role="group" aria-label="Demo account quick login">
+        <button class="demo-btn demo-user"  id="demoUser"  type="button">👤 User</button>
+        <button class="demo-btn demo-agent" id="demoAgent" type="button">🏢 Agent</button>
+        <button class="demo-btn demo-admin" id="demoAdmin" type="button">⚙️ Admin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Background Blobs -->
+  <div class="bg-blobs" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- ── Navigation ───────────────────────── -->
+  <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
+    <div class="container nav-inner">
+      <div class="nav-logo" role="banner">
+        <div class="logo-icon" aria-hidden="true">🏠</div>
+        <span>PropNest</span>
+      </div>
+
+      <div class="nav-tabs" role="tablist" aria-label="Property type filter">
+        <button class="nav-tab active" data-tab="all"  role="tab" aria-selected="true"  id="tab-all">All</button>
+        <button class="nav-tab"        data-tab="rent" role="tab" aria-selected="false" id="tab-rent">🔑 Rent</button>
+        <button class="nav-tab"        data-tab="sell" role="tab" aria-selected="false" id="tab-sell">🏷️ Sell</button>
+        <button class="nav-tab"        data-tab="buy"  role="tab" aria-selected="false" id="tab-buy">🛒 Buy</button>
+        <button class="nav-tab" data-tab="mine" role="tab" aria-selected="false" id="tab-mine" style="display:none;">📋 Mine</button>
+        <button class="nav-tab" data-tab="admin" role="tab" aria-selected="false" id="tab-admin" style="display:none;">⚙️ Admin</button>
+      </div>
+
+      <button class="btn-post-lead" id="openPostModal" aria-label="Post a new property lead">
+        <span class="plus">＋</span> Post Lead
+      </button>
+
+      <!-- User Info (shown when logged in) -->
+      <div class="nav-user" id="navUser" style="display:none;" aria-label="Logged in user info">
+        <div class="nav-avatar" id="navAvatar" aria-hidden="true">U</div>
+        <div class="nav-user-info">
+          <span class="nav-user-name" id="navUserName">User</span>
+          <span class="role-badge role-user" id="navRoleBadge">user</span>
+        </div>
+        <button class="btn-logout" id="logoutBtn" aria-label="Logout">↩ Out</button>
+      </div>
+
+      <button class="nav-burger" id="navBurger" aria-label="Toggle mobile menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" id="mobileNav" role="menu">
+    <button class="mobile-nav-tab active" data-tab="all"  role="menuitem">All Properties</button>
+    <button class="mobile-nav-tab"        data-tab="rent" role="menuitem">🔑 For Rent</button>
+    <button class="mobile-nav-tab"        data-tab="sell" role="menuitem">🏷️ For Sale</button>
+    <button class="mobile-nav-tab"        data-tab="buy"  role="menuitem">🛒 Looking to Buy</button>
+    <button class="mobile-nav-tab" data-tab="mine"  id="mobile-tab-mine"  role="menuitem" style="display:none;">📋 My Listings</button>
+    <button class="mobile-nav-tab" data-tab="admin" id="mobile-tab-admin" role="menuitem" style="display:none;">⚙️ Admin Panel</button>
+    <button class="mobile-nav-tab" id="mobilePostLead" role="menuitem" style="background:rgba(124,92,252,0.15);color:var(--primary-light);border-color:rgba(124,92,252,0.3);">＋ Post Lead</button>
+  </div>
+
+  <!-- ── Hero ─────────────────────────────── -->
+  <section class="hero" aria-labelledby="heroHeading">
+    <div class="container">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        India's fastest growing property platform
+      </div>
+      <h1 id="heroHeading">
+        Find Your<br><span class="gradient-text">Dream Property</span>
+      </h1>
+      <p>Post leads for rent, sell, or buy — connect with verified owners, agents, and buyers across India.</p>
+      <div class="hero-stats" role="list" aria-label="Platform statistics">
+        <div class="stat" role="listitem">
+          <div class="stat-num" id="statListings">0</div>
+          <div class="stat-label">Active Listings</div>
+        </div>
+        <div class="stat" role="listitem">
+          <div class="stat-num">5K+</div>
+          <div class="stat-label">Happy Users</div>
+        </div>
+        <div class="stat" role="listitem">
+          <div class="stat-num">50+</div>
+          <div class="stat-label">Cities</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Search & Filters ─────────────────── -->
+  <section class="search-section" aria-label="Search and filter properties">
+    <div class="container">
+      <form class="search-glass" id="filterForm" role="search" onsubmit="return false;">
+        <div class="search-input-wrap">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="search" id="searchInput" placeholder="Search city, locality, or property type…" aria-label="Search properties" autocomplete="off" />
+        </div>
+
+        <div class="filter-locate-wrap">
+          <select class="filter-select" id="filterCity" aria-label="Filter by city">
+            <option value="">All Cities</option>
+            <!-- populated by JS -->
+          </select>
+          <button type="button" class="btn-locate-filter" id="locateFilterBtn" aria-label="Detect my city" title="Detect my location">
+            📍 Locate Me
+          </button>
+        </div>
+
+        <select class="filter-select" id="filterBeds" aria-label="Filter by bedrooms">
+          <option value="">Any Beds</option>
+          <option value="1">1 BHK</option>
+          <option value="2">2 BHK</option>
+          <option value="3">3 BHK</option>
+          <option value="4">4+ BHK</option>
+        </select>
+
+        <select class="filter-select" id="filterPrice" aria-label="Filter by price range">
+          <option value="">Any Price</option>
+          <option value="0-20000">Under ₹20K/mo</option>
+          <option value="20000-50000">₹20K–50K/mo</option>
+          <option value="50000-100000">₹50K–1L/mo</option>
+          <option value="100000-999999999">Above ₹1L</option>
+        </select>
+
+        <button class="btn-search" id="applyFilters" type="submit">Search</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ── Listings ──────────────────────────── -->
+  <main class="listings-section" id="main-content" aria-label="Property listings">
+    <div class="container">
+      <div class="listings-header">
+        <div>
+          <h2 class="listings-title" id="listingsTitle">All Properties</h2>
+          <p class="listings-count" id="listingsCount" aria-live="polite">Loading…</p>
+        </div>
+        <div class="listings-controls">
+          <select class="sort-select" id="sortSelect" aria-label="Sort listings">
+            <option value="newest">Newest First</option>
+            <option value="price-asc">Price: Low → High</option>
+            <option value="price-desc">Price: High → Low</option>
+          </select>
+          <div class="view-toggle" role="group" aria-label="View mode">
+            <button class="view-btn active" id="gridViewBtn" aria-label="Grid view" title="Grid view">⊞</button>
+            <button class="view-btn" id="listViewBtn" aria-label="List view" title="List view">☰</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="listings-grid" id="listingsGrid" role="list" aria-label="Property cards"></div>
+    </div>
+  </main>
+
+  <!-- ── Admin Panel ──────────────────────── -->
+  <section class="admin-panel" id="adminPanel" style="display:none;" aria-label="Admin Dashboard"></section>
+
+  <!-- ── Footer ────────────────────────────── -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-logo">🏠 <span>PropNest</span></div>
+      <p class="footer-tagline">Your dream property is just a click away</p>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Help Center</a>
+      </nav>
+      <p class="footer-copy">© 2026 PropNest. Built with ❤️ for property seekers across India.</p>
+    </div>
+  </footer>
+
+  <!-- ══════════════════════════════════════
+       LIGHTBOX
+  ══════════════════════════════════════ -->
+  <div id="lightbox" class="lightbox" style="display:none;" role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <div class="lightbox-backdrop" id="lightboxBackdrop"></div>
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close photo viewer">✕</button>
+    <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous photo">‹</button>
+    <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next photo">›</button>
+    <div class="lightbox-content">
+      <img id="lightboxImg" src="" alt="Property photo" />
+      <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
+    </div>
+    <div class="lightbox-thumbs-strip" id="lightboxThumbs"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       POST LEAD MODAL
+  ══════════════════════════════════════ -->
+  <div class="modal-overlay" id="postModal" role="dialog" aria-modal="true" aria-labelledby="postModalTitle">
+    <div class="modal" role="document">
+      <div class="modal-header">
+        <h2 class="modal-title" id="postModalTitle">Post a <span>Lead</span></h2>
+        <button class="modal-close" id="closePostModal" aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="postLeadForm" novalidate>
+
+          <!-- Lead Type -->
+          <div class="form-group form-full" style="margin-bottom:24px;">
+            <label class="form-label">Type of Lead *</label>
+            <div class="type-selector" role="group" aria-label="Select lead type">
+              <button type="button" class="type-btn selected-rent" data-type="rent" id="typeRent">🔑 For Rent</button>
+              <button type="button" class="type-btn" data-type="sell" id="typeSell">🏷️ For Sale</button>
+              <button type="button" class="type-btn" data-type="buy"  id="typeBuy">🛒 Looking to Buy</button>
+            </div>
+            <input type="hidden" id="selectedType" value="rent" required />
+            <span class="form-error" id="errType">Please select a lead type.</span>
+          </div>
+
+          <!-- Property Details -->
+          <p class="form-section-title">Property Details</p>
+          <div class="form-grid" style="margin-bottom:20px;">
+            <div class="form-group form-full">
+              <label class="form-label" for="formTitle">Property Title *</label>
+              <input class="form-input" type="text" id="formTitle" placeholder="e.g. Spacious 2BHK in Bandra" maxlength="100" required />
+              <span class="form-error" id="errTitle">Please enter a property title.</span>
+            </div>
+
+            <div class="form-group form-city-group">
+              <label class="form-label" for="formCity">City *</label>
+              <div class="city-select-row">
+                <select class="form-select" id="formCity" required>
+                  <option value="">Select city</option>
+                  <!-- populated by JS -->
+                </select>
+                <button type="button" class="btn-locate-form" id="locateFormBtn" aria-label="Detect my city">
+                  📍
+                </button>
+              </div>
+              <span class="form-error" id="errCity">Please select a city.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="formAddress">Locality / Area *</label>
+              <input class="form-input" type="text" id="formAddress" placeholder="e.g. Bandra West" required />
+              <span class="form-error" id="errAddress">Please enter locality.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="formBedrooms">Bedrooms</label>
+              <select class="form-select" id="formBedrooms">
+                <option value="0">Studio</option>
+                <option value="1">1 BHK</option>
+                <option value="2" selected>2 BHK</option>
+                <option value="3">3 BHK</option>
+                <option value="4">4 BHK</option>
+                <option value="5">5+ BHK</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="formBathrooms">Bathrooms</label>
+              <select class="form-select" id="formBathrooms">
+                <option value="1">1 Bath</option>
+                <option value="2" selected>2 Baths</option>
+                <option value="3">3 Baths</option>
+                <option value="4">4+ Baths</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="formArea">Area (sq. ft.)</label>
+              <input class="form-input" type="number" id="formArea" placeholder="e.g. 1200" min="50" max="50000" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="formPrice">Price (₹) *</label>
+              <input class="form-input" type="number" id="formPrice" placeholder="e.g. 25000" min="0" required />
+              <span class="form-error" id="errPrice">Please enter a price.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="formPriceUnit">Price Unit</label>
+              <select class="form-select" id="formPriceUnit">
+                <option value="per month">Per Month</option>
+                <option value="per year">Per Year</option>
+                <option value="total">Total Price</option>
+              </select>
+            </div>
+
+            <div class="form-group form-full">
+              <label class="form-label" for="formDescription">Description</label>
+              <textarea class="form-textarea" id="formDescription" placeholder="Describe the property — key features, nearby landmarks, condition…" maxlength="600"></textarea>
+            </div>
+          </div>
+
+          <!-- Photos -->
+          <p class="form-section-title" style="margin-bottom:12px;">Property Photos</p>
+          <div class="form-group form-full" style="margin-bottom:24px;" id="photoPickerSection">
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;">📷 Click photos to select (up to 5). Hover to preview.</p>
+            <div class="photo-preset-grid" id="photoPresetGrid"><!-- populated by JS --></div>
+            <div class="photo-url-row" style="margin-top:12px;">
+              <input class="form-input" type="url" id="customPhotoUrl" placeholder="Or paste a custom image URL…" style="flex:1;" />
+              <button type="button" class="btn-add-url" id="addCustomPhotoBtn">＋ Add URL</button>
+            </div>
+            <div class="selected-photos-strip" id="selectedPhotosStrip"></div>
+          </div>
+
+          <!-- Amenities -->
+          <p class="form-section-title" style="margin-bottom:12px;">Amenities</p>
+          <div class="amenities-grid form-full" id="amenitiesGrid" style="margin-bottom:24px;" role="group" aria-label="Select amenities">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Contact Details -->
+          <p class="form-section-title" style="margin-bottom:12px;">Contact Information</p>
+          <div class="form-grid" style="margin-bottom:24px;">
+            <div class="form-group">
+              <label class="form-label" for="formContactName">Your Name *</label>
+              <input class="form-input" type="text" id="formContactName" placeholder="Full name" required />
+              <span class="form-error" id="errName">Please enter your name.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="formContactPhone">Phone Number *</label>
+              <input class="form-input" type="tel" id="formContactPhone" placeholder="10-digit mobile number" maxlength="10" required />
+              <span class="form-error" id="errPhone">Please enter a valid 10-digit phone number.</span>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label" for="formContactEmail">Email (optional)</label>
+              <input class="form-input" type="email" id="formContactEmail" placeholder="your@email.com" />
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit-lead" id="submitLead">🚀 Post My Lead</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       DETAIL MODAL
+  ══════════════════════════════════════ -->
+  <div class="modal-overlay" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+    <div class="modal" role="document">
+      <div class="detail-hero">
+        <img id="detailImg" src="" alt="" style="cursor:zoom-in;" onclick="openLightboxFromDetail()" />
+        <div class="detail-hero-overlay"></div>
+        <div class="detail-hero-badges">
+          <span class="card-type-badge" id="detailBadge"></span>
+          <span class="detail-verified-badge" id="detailVerifiedBadge" style="display:none;">&#10003; Verified</span>
+        </div>
+        <button class="card-fav detail-hero-fav" id="detailFavBtn" aria-label="Toggle favourite"></button>
+        <button class="modal-close" id="closeDetailModal" style="position:absolute;top:16px;right:60px;background:rgba(0,0,0,0.5);" aria-label="Close detail">✕</button>
+        <!-- Gallery nav arrows -->
+        <button class="detail-gallery-arrow detail-gallery-prev" id="detailGalleryPrev" style="display:none;" aria-label="Previous photo">‹</button>
+        <button class="detail-gallery-arrow detail-gallery-next" id="detailGalleryNext" style="display:none;" aria-label="Next photo">›</button>
+        <span class="detail-photo-counter" id="detailPhotoCounter" style="display:none;">1 / 1</span>
+      </div>
+      <!-- Thumbnail strip -->
+      <div class="detail-thumbs" id="detailThumbs"></div>
+      <div class="detail-content">
+        <div id="detailPrice" class="detail-price"></div>
+        <h2 id="detailTitle" class="detail-title"></h2>
+        <div id="detailLocation" class="detail-location"></div>
+        <div id="detailSpecs"   class="detail-specs"></div>
+        <p  id="detailDesc"     class="detail-desc"></p>
+        <div id="detailAmenities" class="detail-amenities"></div>
+        <div class="detail-contact">
+          <div class="detail-contact-info">
+            <div class="label">Posted by</div>
+            <div class="name" id="detailContactName"></div>
+            <div class="phone" id="detailContactPhone"></div>
+          </div>
+          <button class="btn-call" id="detailCallBtn" aria-label="Call owner">📞 Call Owner</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
