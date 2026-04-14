@@ -377,7 +377,23 @@
           <!-- Photos -->
           <p class="form-section-title" style="margin-bottom:12px;">Property Photos</p>
           <div class="form-group form-full" style="margin-bottom:24px;" id="photoPickerSection">
-            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;">📷 Click photos to select (up to 5). Hover to preview.</p>
+
+            <!-- Hidden file input (triggered by upload button) -->
+            <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none;" />
+
+            <!-- Primary: Upload from device via Cloudinary -->
+            <button type="button" class="btn-upload-device" id="uploadDeviceBtn">
+              <span class="upload-btn-icon">📁</span>
+              <span>
+                <strong>Upload from Device</strong>
+                <small>JPEG, PNG, WebP · max 10 MB · up to 5 photos</small>
+              </span>
+            </button>
+
+            <!-- Divider -->
+            <div class="upload-divider"><span>or choose a preset photo</span></div>
+
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;">Click to select (up to 5)</p>
             <div class="photo-preset-grid" id="photoPresetGrid"><!-- populated by JS --></div>
             <div class="photo-url-row" style="margin-top:12px;">
               <input class="form-input" type="url" id="customPhotoUrl" placeholder="Or paste a custom image URL…" style="flex:1;" />

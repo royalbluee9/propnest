@@ -10,6 +10,12 @@ const STORAGE_KEY_FAVS    = 'propnest_favs';
 const STORAGE_KEY_USERS   = 'propnest_users';
 const STORAGE_KEY_SESSION = 'propnest_session';
 
+// ── Cloudinary Config ──────────────────────────
+const CLOUDINARY_CLOUD_NAME    = 'dvi8bmhnf';
+const CLOUDINARY_UPLOAD_PRESET = 'propnest_uploads';
+const CLOUDINARY_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const CLOUDINARY_UPLOAD_URL    = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
 const AMENITIES_LIST = [
   'Parking', 'Swimming Pool', 'Gym', 'Power Backup', 'Lift/Elevator',
   'Security', 'Garden/Park', 'Club House', 'WiFi', 'Air Conditioning',
@@ -722,6 +728,8 @@ window.adminVerifyAgent = adminVerifyAgent;
 // ── Photo Selector ────────────────────────────
 function initPhotoSelector() {
   state.selectedPhotos = [];
+
+  // Preset grid
   const grid = document.getElementById('photoPresetGrid');
   if (!grid) return;
   grid.innerHTML = PROPERTY_PHOTO_PRESETS.map((p, i) =>
@@ -731,10 +739,147 @@ function initPhotoSelector() {
        <div class="photo-preset-check">✓</div>
      </div>`
   ).join('');
+
   updateSelectedStrip();
+
+  // Wire custom URL button
   const addBtn = document.getElementById('addCustomPhotoBtn');
   if (addBtn) addBtn.onclick = addCustomPhotoUrl;
+
+  // Wire device upload button → triggers hidden file input
+  const uploadBtn  = document.getElementById('uploadDeviceBtn');
+  const fileInput  = document.getElementById('photoFileInput');
+  if (uploadBtn && fileInput) {
+    uploadBtn.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => handlePhotoUpload(e.target.files);
+  }
 }
+
+// ── Cloudinary Upload ─────────────────────────
+
+// Upload a single File object → returns secure_url string
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  const res = await fetch(CLOUDINARY_UPLOAD_URL, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Upload failed (${res.status})`);
+  }
+
+  const data = await res.json();
+  return data.secure_url;
+}
+
+// Batch upload handler — called when user picks files from device
+async function handlePhotoUpload(fileList) {
+  if (!fileList || fileList.length === 0) return;
+
+  const files = Array.from(fileList);
+  const remaining = 5 - state.selectedPhotos.length;
+
+  if (remaining <= 0) {
+    showToast('Maximum 5 photos already selected.', 'error');
+    return;
+  }
+
+  const toUpload = files.slice(0, remaining);
+  if (files.length > remaining) {
+    showToast(`Only ${remaining} more photo${remaining === 1 ? '' : 's'} allowed. Uploading first ${remaining}.`, 'success');
+  }
+
+  // Validate file types and sizes before uploading
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
+  for (const file of toUpload) {
+    if (!validTypes.includes(file.type)) {
+      showToast(`"${file.name}" is not a supported image type.`, 'error');
+      return;
+    }
+    if (file.size > CLOUDINARY_MAX_FILE_SIZE) {
+      showToast(`"${file.name}" exceeds 10 MB limit.`, 'error');
+      return;
+    }
+  }
+
+  // Show uploading state on the button
+  const uploadBtn = document.getElementById('uploadDeviceBtn');
+  if (uploadBtn) { uploadBtn.disabled = true; uploadBtn.innerHTML = '⏳ Uploading…'; }
+
+  // Add placeholder entries for each file
+  const placeholderIds = toUpload.map((_, i) => `upload-placeholder-${Date.now()}-${i}`);
+  const strip = document.getElementById('selectedPhotosStrip');
+
+  // Add uploading placeholders to the strip immediately
+  const existingRow = strip.querySelector('.selected-photos-row');
+  placeholderIds.forEach((pid, i) => {
+    const ph = document.createElement('div');
+    ph.className = 'selected-photo-item upload-uploading';
+    ph.id = pid;
+    ph.innerHTML = `
+      <div class="upload-progress-overlay">
+        <div class="upload-spinner"></div>
+        <span>${toUpload[i].name.length > 12 ? toUpload[i].name.slice(0,12)+'…' : toUpload[i].name}</span>
+      </div>`;
+    if (existingRow) {
+      existingRow.appendChild(ph);
+    } else {
+      // If strip doesn't have a row yet, re-render it
+      state.selectedPhotos.push('__placeholder__');
+      updateSelectedStrip();
+      state.selectedPhotos.pop();
+      const newRow = strip.querySelector('.selected-photos-row') || strip;
+      newRow.appendChild(ph);
+    }
+  });
+
+  // Upload all files in parallel
+  let successCount = 0;
+  await Promise.all(toUpload.map(async (file, i) => {
+    const phEl = document.getElementById(placeholderIds[i]);
+    try {
+      const url = await uploadToCloudinary(file);
+      state.selectedPhotos.push(url);
+      successCount++;
+      // Remove placeholder (full strip re-render at end)
+      phEl?.remove();
+    } catch (err) {
+      console.error('Cloudinary upload error:', err);
+      if (phEl) {
+        phEl.classList.replace('upload-uploading', 'upload-error');
+        phEl.innerHTML = `
+          <div class="upload-progress-overlay">
+            <span style="font-size:1.4rem;">✕</span>
+            <span style="font-size:0.65rem;color:#f87171;">Failed</span>
+          </div>`;
+        // Remove error placeholder after 3s
+        setTimeout(() => phEl?.remove(), 3000);
+      }
+    }
+  }));
+
+  // Reset file input so same files can be re-selected if needed
+  const fileInput = document.getElementById('photoFileInput');
+  if (fileInput) fileInput.value = '';
+
+  // Re-render the strip with all successfully uploaded photos
+  updateSelectedStrip();
+
+  // Restore upload button
+  if (uploadBtn) { uploadBtn.disabled = false; uploadBtn.innerHTML = '📁 Upload from Device'; }
+
+  if (successCount > 0) {
+    showToast(`✅ ${successCount} photo${successCount === 1 ? '' : 's'} uploaded successfully!`, 'success');
+  }
+}
+
+window.handlePhotoUpload = handlePhotoUpload;
+
 
 function togglePhotoPreset(url, index) {
   const idx = state.selectedPhotos.indexOf(url);
