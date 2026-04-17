@@ -527,24 +527,28 @@ function renderAdminPanel() {
       <h3 class="admin-section-title">👥 Registered Users</h3>
       <div class="admin-table-wrap">
         <table class="admin-table"><thead><tr>
-          <th>Name</th><th>Email</th><th>Role</th><th>Agent Status</th><th>Joined</th><th>Listings</th><th>Action</th>
+          <th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Listings</th><th>Action</th>
         </tr></thead><tbody>
           ${users.map(u => {
-            const cnt     = leads.filter(l => l.postedBy === u.id).length;
-            const isAgent = u.role === 'agent';
-            const verHtml = isAgent
-              ? (u.agentVerified
-                  ? '<span class="user-role-pill pill-agent">✓ Verified Agent</span>'
-                  : `<button class="btn-verify-agent" onclick="adminVerifyAgent('${u.id}')">⭐ Verify Agent</button>`)
-              : '<span style="color:var(--text-muted);font-size:0.78rem;">N/A</span>';
+            const cnt = leads.filter(l => l.postedBy === u.id).length;
+            let actionHtml;
+            if (u.role === 'admin') {
+              actionHtml = '<span style="color:var(--text-muted);font-size:0.78rem;">Super Admin</span>';
+            } else if (u.role === 'agent') {
+              actionHtml = `<div class="admin-action-row">
+                <span class="user-role-pill pill-agent">✓ Agent</span>
+                <button class="btn-reject" onclick="adminDemoteToUser('${u.id}')">↩ Revoke</button>
+              </div>`;
+            } else {
+              actionHtml = `<button class="btn-verify-agent" onclick="adminPromoteToAgent('${u.id}')">&#11088; Make Agent</button>`;
+            }
             return `<tr>
               <td>${u.name}</td>
               <td>${u.email}</td>
               <td><span class="user-role-pill pill-${u.role}">${u.role}</span></td>
-              <td>${verHtml}</td>
               <td>${formatDate(u.createdAt)}</td>
               <td>${cnt}</td>
-              <td></td>
+              <td>${actionHtml}</td>
             </tr>`;
           }).join('')}
         </tbody></table>
@@ -606,15 +610,13 @@ function initAuth() {
     clearAuthError(document.getElementById('signupError'));
   });
 
-  // Role cards
-  authState.signupRole = 'user';
-  document.querySelectorAll('.role-card').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.role-card').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      authState.signupRole = btn.dataset.role;
+  // Wire Google sign-in button (placeholder — shows coming-soon toast)
+  const googleBtn = document.getElementById('googleSignInBtn');
+  if (googleBtn) {
+    googleBtn.addEventListener('click', () => {
+      showToast('Google Sign-In coming soon! Use email & password for now.', 'error');
     });
-  });
+  }
 
   // Login submit
   document.getElementById('loginForm').addEventListener('submit', e => {
@@ -625,7 +627,7 @@ function initAuth() {
     clearAuthError(errEl);
     if (!email || !password) { showAuthError(errEl, 'Please fill in all fields.'); return; }
     const user = loginUser(email, password);
-    if (!user) { showAuthError(errEl, 'Invalid email or password. Try a demo account below.'); return; }
+    if (!user) { showAuthError(errEl, 'Invalid email or password. Please try again.'); return; }
     authState.currentUser = user;
     saveSession(user.id);
     hideAuthScreen();
@@ -646,7 +648,7 @@ function initAuth() {
     if (!name || !email || !password) { showAuthError(errEl, 'Please fill in all fields.'); return; }
     if (password.length < 6)          { showAuthError(errEl, 'Password must be at least 6 characters.'); return; }
     if (!/\S+@\S+\.\S+/.test(email))  { showAuthError(errEl, 'Please enter a valid email address.'); return; }
-    const result = registerUser(name, email, password, authState.signupRole);
+    const result = registerUser(name, email, password, 'user'); // Everyone starts as a user; agents are promoted by admin
     if (result.error) { showAuthError(errEl, result.error); return; }
     authState.currentUser = result;
     saveSession(result.id);
@@ -654,23 +656,6 @@ function initAuth() {
     updateNavForUser();
     renderListings();
     showToast(`Welcome to PropNest, ${name.split(' ')[0]}! \ud83c\udf89`, 'success');
-  });
-
-  // Demo quick-login
-  const demoMap = {
-    demoUser:  { email: 'user@propnest.com',  password: 'User@123'  },
-    demoAgent: { email: 'agent@propnest.com', password: 'Agent@123' },
-    demoAdmin: { email: 'admin@propnest.com', password: 'Admin@123' },
-  };
-  Object.entries(demoMap).forEach(([btnId, creds]) => {
-    const btn = document.getElementById(btnId);
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-      document.getElementById('loginTabBtn').click();
-      document.getElementById('loginEmail').value    = creds.email;
-      document.getElementById('loginPassword').value = creds.password;
-      setTimeout(() => document.getElementById('loginForm').dispatchEvent(new Event('submit', { cancelable: true })), 60);
-    });
   });
 
   // Logout
@@ -723,9 +708,38 @@ function adminVerifyAgent(userId) {
   showToast(`🏆 ${user.name} is now a Verified Agent! Their listings will auto-approve.`, 'success');
 }
 
-window.adminApproveLead = adminApproveLead;
-window.adminRejectLead  = adminRejectLead;
-window.adminVerifyAgent = adminVerifyAgent;
+window.adminApproveLead  = adminApproveLead;
+window.adminRejectLead   = adminRejectLead;
+window.adminVerifyAgent  = adminVerifyAgent;
+
+// ── Admin: Promote / Demote User Role ─────────
+function adminPromoteToAgent(userId) {
+  if (!isAdmin()) return;
+  const user = authState.users.find(u => u.id === userId);
+  if (!user || user.role === 'admin') return;
+  if (!confirm(`Promote "${user.name}" to Verified Agent? They will be able to post and manage listings.`)) return;
+  user.role = 'agent';
+  user.agentVerified = true;
+  user.agentVerifiedAt = Date.now();
+  saveUsers();
+  renderAdminPanel();
+  showToast(`🏆 ${user.name} is now a Verified Agent!`, 'success');
+}
+
+function adminDemoteToUser(userId) {
+  if (!isAdmin()) return;
+  const user = authState.users.find(u => u.id === userId);
+  if (!user || user.role === 'admin') return;
+  if (!confirm(`Revoke Agent access for "${user.name}"? They will become a regular user.`)) return;
+  user.role = 'user';
+  user.agentVerified = false;
+  saveUsers();
+  renderAdminPanel();
+  showToast(`${user.name} has been demoted to User.`, 'success');
+}
+
+window.adminPromoteToAgent = adminPromoteToAgent;
+window.adminDemoteToUser   = adminDemoteToUser;
 
 // ── Photo Selector ────────────────────────────
 function initPhotoSelector() {
