@@ -974,7 +974,9 @@ function openLightbox(leadId, startIndex) {
 
 function closeLightbox() {
   document.getElementById('lightbox').style.display = 'none';
-  document.body.style.overflow = '';
+  // Restore body scroll only if no modal is still open
+  const modalOpen = document.querySelector('.modal-overlay.open');
+  if (!modalOpen) document.body.style.overflow = '';
 }
 
 function navLightbox(dir) {
@@ -1040,8 +1042,12 @@ function renderDetailGallery(lead) {
   if (thumbsEl) {
     thumbsEl.style.display = hasMulti ? 'flex' : 'none';
     thumbsEl.innerHTML = hasMulti ? images.map((img, i) =>
-      `<div class="detail-thumb-item ${i === 0 ? 'active' : ''}" onclick="detailGalleryGoTo(${i})">
+      `<div class="detail-thumb-item ${i === 0 ? 'active' : ''}"
+            onclick="detailGallerySelectAndOpen(${i})"
+            style="cursor:zoom-in;"
+            title="Click to view full screen">
          <img src="${img}" alt="Photo ${i+1}" loading="lazy" />
+         <div class="detail-thumb-expand">⛶</div>
        </div>`
     ).join('') : '';
   }
@@ -1052,6 +1058,12 @@ function openLightboxFromDetail() {
 }
 
 window.openLightboxFromDetail = openLightboxFromDetail;
+
+// Combined: switch gallery index AND open lightbox (used by thumbnails)
+window.detailGallerySelectAndOpen = function(index) {
+  detailGalleryGoTo(index);
+  openLightbox(detailGalleryState.leadId, index);
+};
 
 window.detailGalleryNav = function(dir) {
   const { images } = detailGalleryState;
