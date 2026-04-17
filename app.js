@@ -1025,9 +1025,9 @@ function renderDetailGallery(lead) {
 
   document.getElementById('detailImg').src = images[0];
 
-  // Verified badge
-  const vBadge = document.getElementById('detailVerifiedBadge');
-  if (vBadge) vBadge.style.display = (lead.status === 'live') ? '' : 'none';
+  // Verified badge — shown below thumbnail strip, left-aligned
+  const vRow = document.getElementById('detailVerifiedRow');
+  if (vRow) vRow.style.display = (lead.status === 'live') ? '' : 'none';
 
   const prevBtn  = document.getElementById('detailGalleryPrev');
   const nextBtn  = document.getElementById('detailGalleryNext');
@@ -1636,6 +1636,7 @@ function onScroll() {
 
 // ── Init ───────────────────────────────────────
 function init() {
+  initTheme();
   loadFromStorage();
   populateCityDropdowns();
   buildAmenities();
@@ -1755,6 +1756,31 @@ function init() {
 
   // Navbar scroll effect
   window.addEventListener('scroll', onScroll, { passive: true });
+}
+
+// ── Theme Toggle ───────────────────────────────
+const STORAGE_KEY_THEME = 'propnest_theme';
+
+function initTheme() {
+  const saved = localStorage.getItem(STORAGE_KEY_THEME) || 'dark';
+  applyTheme(saved);
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    localStorage.setItem(STORAGE_KEY_THEME, next);
+  });
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const btn = document.getElementById('themeToggle');
+  if (!btn) return;
+  btn.classList.toggle('theme-light', theme === 'light');
+  btn.setAttribute('aria-label', theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+  // Update meta theme-color
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = theme === 'light' ? '#F4F4FF' : '#7C5CFC';
 }
 
 // ── Debounce ───────────────────────────────────

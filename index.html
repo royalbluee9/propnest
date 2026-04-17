@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -45,6 +45,9 @@
   <!-- Favicon -->
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="favicon.svg" />
+
+  <!-- Anti-FOUC: apply saved theme before CSS renders -->
+  <script>try{var t=localStorage.getItem('propnest_theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 
   <!-- Styles & Fonts -->
   <link rel="stylesheet" href="style.css" />
@@ -144,6 +147,12 @@
 
       <button class="btn-post-lead" id="openPostModal" aria-label="Post a new property lead">
         <span class="plus">＋</span> Post Lead
+      </button>
+
+      <!-- Dark/Light Mode Toggle -->
+      <button class="btn-theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode" title="Toggle theme">
+        <span class="theme-icon-dark">🌙</span>
+        <span class="theme-icon-light">☀️</span>
       </button>
 
       <!-- User Info (shown when logged in) -->
@@ -456,7 +465,6 @@
         <div class="detail-hero-overlay"></div>
         <div class="detail-hero-badges">
           <span class="card-type-badge" id="detailBadge"></span>
-          <span class="detail-verified-badge" id="detailVerifiedBadge" style="display:none;">&#10003; Verified</span>
         </div>
         <!-- Full-screen shortcut button -->
         <button class="btn-detail-fullscreen" id="detailFullscreenBtn" onclick="openLightboxFromDetail()" aria-label="View photos full screen" title="View full screen">
@@ -472,6 +480,13 @@
       </div>
       <!-- Thumbnail strip -->
       <div class="detail-thumbs" id="detailThumbs"></div>
+      <!-- Verified badge sits below image / thumbnails, left-aligned -->
+      <div class="detail-verified-row" id="detailVerifiedRow" style="display:none;">
+        <span class="detail-verified-badge" id="detailVerifiedBadge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Verified Listing
+        </span>
+      </div>
       <div class="detail-content">
         <div id="detailPrice" class="detail-price"></div>
         <h2 id="detailTitle" class="detail-title"></h2>
