@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "name": "propnest",
+  "builds": [
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.{css,js,json,svg,txt,xml}",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/favicon.svg",
+      "headers": { "cache-control": "public, max-age=31536000, immutable" },
+      "dest": "/favicon.svg"
+    },
+    {
+      "src": "/manifest.json",
+      "headers": { "cache-control": "public, max-age=86400" },
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/(style\\.css|app\\.js)",
+      "headers": { "cache-control": "public, max-age=86400" },
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "geolocation=(self), camera=(), microphone=()" }
+      ]
+    }
+  ]
+}

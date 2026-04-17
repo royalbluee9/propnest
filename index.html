@@ -3,9 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PropNest — Find Your Perfect Property</title>
-  <meta name="description" content="PropNest is your go-to platform to post and discover property leads for rent, sale, and purchase across India. Find flats, villas, plots, and more." />
-  <meta name="keywords" content="property rent, property sale, buy house, real estate India, flat for rent, apartment for sale" />
+
+  <!-- Primary Meta -->
+  <title>PropNest — Find Your Perfect Property in India</title>
+  <meta name="description" content="PropNest is India's fastest-growing property marketplace. Post and discover property leads for rent, sale, and purchase across 200+ cities. Find flats, villas, plots, and more." />
+  <meta name="keywords" content="property rent, property sale, buy house, real estate India, flat for rent, apartment for sale, PropNest" />
+  <meta name="author" content="PropNest" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://propnest.vercel.app/" />
+
+  <!-- Security -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+
+  <!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://propnest.vercel.app/" />
+  <meta property="og:title"       content="PropNest — Find Your Perfect Property in India" />
+  <meta property="og:description" content="Post and discover property leads for rent, sale, and purchase across 200+ cities in India." />
+  <meta property="og:image"       content="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1200&q=80" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale"      content="en_IN" />
+  <meta property="og:site_name"   content="PropNest" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:site"        content="@propnest" />
+  <meta name="twitter:title"       content="PropNest — Find Your Perfect Property in India" />
+  <meta name="twitter:description" content="Post and discover property leads for rent, sale, and purchase across 200+ cities in India." />
+  <meta name="twitter:image"       content="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1200&q=80" />
+
+  <!-- PWA / App -->
+  <meta name="theme-color" content="#7c5cfc" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PropNest" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
+
+  <!-- Styles & Fonts -->
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -378,17 +419,17 @@
           <p class="form-section-title" style="margin-bottom:12px;">Property Photos</p>
           <div class="form-group form-full" style="margin-bottom:24px;" id="photoPickerSection">
 
-            <!-- Hidden file input (triggered by upload button) -->
+            <!-- Hidden file input — label below triggers it natively -->
             <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none;" />
 
-            <!-- Primary: Upload from device via Cloudinary -->
-            <button type="button" class="btn-upload-device" id="uploadDeviceBtn">
+            <!-- Primary: Upload from device via Cloudinary (label = native file trigger) -->
+            <label for="photoFileInput" class="btn-upload-device" id="uploadDeviceBtn" role="button" tabindex="0">
               <span class="upload-btn-icon">📁</span>
               <span>
                 <strong>Upload from Device</strong>
                 <small>JPEG, PNG, WebP · max 10 MB · up to 5 photos</small>
               </span>
-            </button>
+            </label>
 
             <!-- Divider -->
             <div class="upload-divider"><span>or choose a preset photo</span></div>
@@ -476,6 +517,6 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
-  <script src="app.js"></script>
+  <script src="app.js" defer></script>
 </body>
 </html>

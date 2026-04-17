@@ -11,6 +11,8 @@ const STORAGE_KEY_USERS   = 'propnest_users';
 const STORAGE_KEY_SESSION = 'propnest_session';
 
 // ── Cloudinary Config ──────────────────────────
+// These are SAFE to expose: only the cloud name and an unsigned upload preset are used.
+// No API secret is included. The upload preset is set to "unsigned" in the Cloudinary dashboard.
 const CLOUDINARY_CLOUD_NAME    = 'dvi8bmhnf';
 const CLOUDINARY_UPLOAD_PRESET = 'propnest_uploads';
 const CLOUDINARY_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -746,11 +748,9 @@ function initPhotoSelector() {
   const addBtn = document.getElementById('addCustomPhotoBtn');
   if (addBtn) addBtn.onclick = addCustomPhotoUrl;
 
-  // Wire device upload button → triggers hidden file input
-  const uploadBtn  = document.getElementById('uploadDeviceBtn');
-  const fileInput  = document.getElementById('photoFileInput');
-  if (uploadBtn && fileInput) {
-    uploadBtn.onclick = () => fileInput.click();
+  // Wire file input onchange (label triggers it natively via for="photoFileInput")
+  const fileInput = document.getElementById('photoFileInput');
+  if (fileInput) {
     fileInput.onchange = (e) => handlePhotoUpload(e.target.files);
   }
 }
@@ -1320,6 +1320,10 @@ function openDetail(id) {
 function openPostModal() {
   if (!authState.currentUser) { showToast('Please login to post a lead.', 'error'); return; }
   applyPostFormRoleRestrictions();
+  state.selectedPhotos    = [];
+  state.selectedAmenities = [];
+  initPhotoSelector();
+  buildAmenities();
   openModal('postModal');
 }
 

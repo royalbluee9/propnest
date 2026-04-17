@@ -1,0 +1,21 @@
+{
+  "name": "PropNest — Find Your Perfect Property",
+  "short_name": "PropNest",
+  "description": "Post and discover property leads for rent, sale, and purchase across India.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#7c5cfc",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["real estate", "property", "housing"],
+  "lang": "en-IN",
+  "dir": "ltr"
+}
