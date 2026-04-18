@@ -252,6 +252,7 @@ let state = {
   selectedAmenities: [],
   selectedPhotos:    [],
   currentDetailId: null,
+  editingLeadId:   null,
 };
 
 // ── Utility helpers ────────────────────────────
@@ -360,7 +361,7 @@ function logoutUser() {
   if (ls) ls.style.display = '';
   if (ss) ss.style.display = '';
   document.getElementById('navUser').style.display = 'none';
-  ['tab-mine','tab-admin','mobile-tab-mine','mobile-tab-admin'].forEach(id => {
+  ['tab-mine','tab-admin','mobile-tab-mine','mobile-tab-admin','tab-favs','mobile-tab-favs'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   state.activeTab = 'all';
@@ -412,6 +413,7 @@ function updateNavForUser() {
   const showAdmin = user.role === 'admin';
   ['tab-mine','mobile-tab-mine'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = showMine  ? '' : 'none'; });
   ['tab-admin','mobile-tab-admin'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = showAdmin ? '' : 'none'; });
+  ['tab-favs','mobile-tab-favs'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = ''; });
 }
 
 // ── My Listings Count Badge ────────────────────
@@ -466,9 +468,10 @@ function renderAdminPanel() {
       <h2 class="listings-title" style="margin-bottom:24px;padding-top:20px;">⚙️ Admin Dashboard</h2>
       <div class="admin-stats">
         <div class="admin-stat-card"><div class="admin-stat-icon">🏠</div><div class="admin-stat-num">${leads.length}</div><div class="admin-stat-label">Total Listings</div></div>
-        <div class="admin-stat-card" style="border-color:rgba(74,222,128,0.3);"><div class="admin-stat-icon">✅</div><div class="admin-stat-num" style="background:linear-gradient(135deg,#4ade80,#22c55e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${liveC}</div><div class="admin-stat-label">Live & Verified</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-icon">🌆</div><div class="admin-stat-num">${new Set(leads.map(l => l.city)).size}</div><div class="admin-stat-label">Cities Covered</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-icon">👥</div><div class="admin-stat-num">${users.filter(u => u.role === 'agent').length}</div><div class="admin-stat-label">Total Agents</div></div>
+        <div class="admin-stat-card" style="border-color:rgba(74,222,128,0.3);"><div class="admin-stat-icon">✅</div><div class="admin-stat-num" style="background:linear-gradient(135deg,#4ade80,#22c55e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${liveC}</div><div class="admin-stat-label">Verified Listings</div></div>
         <div class="admin-stat-card" style="${pendingC > 0 ? 'border-color:rgba(251,191,36,0.4);' : ''}"><div class="admin-stat-icon">⏳</div><div class="admin-stat-num" style="${pendingC > 0 ? 'background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;' : ''}">${pendingC}</div><div class="admin-stat-label">Pending</div></div>
-        <div class="admin-stat-card"><div class="admin-stat-icon">👥</div><div class="admin-stat-num">${users.length}</div><div class="admin-stat-label">Registered Users</div></div>
         <div class="admin-stat-card"><div class="admin-stat-icon">🔑</div><div class="admin-stat-num">${rentC}</div><div class="admin-stat-label">Rent</div></div>
         <div class="admin-stat-card"><div class="admin-stat-icon">🏷️</div><div class="admin-stat-num">${sellC}</div><div class="admin-stat-label">Sale</div></div>
         <div class="admin-stat-card"><div class="admin-stat-icon">🛒</div><div class="admin-stat-num">${buyC}</div><div class="admin-stat-label">Buy</div></div>
@@ -1089,6 +1092,8 @@ function getFilteredLeads() {
   if (state.activeTab === 'mine') {
     list = list.filter(l => l.postedBy === authState.currentUser?.id);
     // mine tab shows all statuses (pending/live/rejected)
+  } else if (state.activeTab === 'favs') {
+    list = list.filter(l => state.favourites.includes(l.id));
   } else if (state.activeTab !== 'all' && state.activeTab !== 'admin') {
     list = list.filter(l => l.type === state.activeTab);
     // non-admins only see live listings
@@ -1145,7 +1150,7 @@ function renderListings() {
   const list   = getFilteredLeads();
 
   // Update header
-  const tabLabels = { all: 'All Properties', rent: 'Properties for Rent', sell: 'Properties for Sale', buy: 'Looking to Buy', mine: 'My Listings' };
+  const tabLabels = { all: 'All Properties', rent: 'Properties for Rent', sell: 'Properties for Sale', buy: 'Looking to Buy', mine: 'My Listings', favs: '❤️ Favourites' };
   title.textContent = tabLabels[state.activeTab] || 'All Properties';
   count.textContent = `${list.length} ${list.length === 1 ? 'property' : 'properties'} found`;
 
@@ -1184,7 +1189,7 @@ function renderListings() {
   });
 
   // Also prevent delete btn from opening card
-  grid.querySelectorAll('.btn-delete-card').forEach(btn => {
+  grid.querySelectorAll('.btn-card-action').forEach(btn => {
     btn.addEventListener('click', e => { e.stopPropagation(); });
   });
 
@@ -1243,7 +1248,11 @@ function buildCard(lead, index) {
         <span class="card-date">${formatDate(lead.postedAt)}</span>
       </div>
     </div>
-    ${canDeleteLead(lead) ? `<button class="btn-delete-card" onclick="deleteLead('${lead.id}', event)" aria-label="Delete listing">🗑 Delete</button>` : ''}
+    ${canDeleteLead(lead) ? `
+      <div class="card-actions">
+        <button class="btn-card-action edit" onclick="openEditListing('${lead.id}', event)" aria-label="Edit listing">✏️ Edit</button>
+        <button class="btn-card-action delete" onclick="deleteLead('${lead.id}', event)" aria-label="Delete listing">🗑 Delete</button>
+      </div>` : ''}
   </article>`;
 }
 
@@ -1285,6 +1294,9 @@ function toggleFav(id, btn) {
       dBtn.classList.toggle('active', isFav);
     }
   }
+
+  // Reload grid if on favs tab
+  if (state.activeTab === 'favs') renderListings();
 }
 
 // ── Detail Modal ───────────────────────────────
@@ -1345,6 +1357,11 @@ function openDetail(id) {
 // ── Post Lead Modal ────────────────────────────
 function openPostModal() {
   if (!authState.currentUser) { showToast('Please login to post a lead.', 'error'); return; }
+  state.editingLeadId = null;
+  document.getElementById('postModalTitle').innerHTML = 'Post a <span>Lead</span>';
+  document.getElementById('submitLead').textContent = '🚀 Post My Lead';
+  document.getElementById('postLeadForm').reset();
+  
   applyPostFormRoleRestrictions();
   state.selectedPhotos    = [];
   state.selectedAmenities = [];
@@ -1352,6 +1369,42 @@ function openPostModal() {
   buildAmenities();
   openModal('postModal');
 }
+
+function openEditListing(id, e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  const lead = state.leads.find(l => l.id === id);
+  if (!lead || !canDeleteLead(lead)) return;
+
+  state.editingLeadId = id;
+  document.getElementById('postModalTitle').innerHTML = 'Edit Your <span>Listing</span>';
+  document.getElementById('submitLead').textContent = 'Save Changes';
+
+  // Populate form
+  resetTypeButtons(lead.type);
+  document.getElementById('formTitle').value = lead.title;
+  document.getElementById('formCity').value = lead.city;
+  document.getElementById('formAddress').value = lead.address;
+  document.getElementById('formBedrooms').value = lead.bedrooms;
+  document.getElementById('formBathrooms').value = lead.bathrooms;
+  document.getElementById('formArea').value = lead.area || '';
+  document.getElementById('formPrice').value = lead.price;
+  document.getElementById('formPriceUnit').value = lead.priceUnit;
+  document.getElementById('formDescription').value = lead.description || '';
+  document.getElementById('formContactName').value = lead.contact.name;
+  document.getElementById('formContactPhone').value = lead.contact.phone;
+  document.getElementById('formContactEmail').value = lead.contact.email || '';
+
+  state.selectedAmenities = [...(lead.amenities || [])];
+  state.selectedPhotos = [...(lead.images || [])];
+  
+  applyPostFormRoleRestrictions();
+  initPhotoSelector();
+  buildAmenities();
+  
+  openModal('postModal');
+}
+
+window.openEditListing = openEditListing;
 
 function openModal(id) {
   document.getElementById(id).classList.add('open');
@@ -1525,6 +1578,33 @@ function validateAndSubmit() {
 
   const price = parseFloat(document.getElementById('formPrice').value);
   const type  = document.getElementById('selectedType').value;
+
+  if (state.editingLeadId) {
+    const lead = state.leads.find(l => l.id === state.editingLeadId);
+    if (lead) {
+      lead.type = type;
+      lead.title = document.getElementById('formTitle').value.trim();
+      lead.description = document.getElementById('formDescription').value.trim();
+      lead.city = document.getElementById('formCity').value;
+      lead.address = document.getElementById('formAddress').value.trim();
+      lead.price = price;
+      lead.priceUnit = document.getElementById('formPriceUnit').value;
+      lead.bedrooms = parseInt(document.getElementById('formBedrooms').value);
+      lead.bathrooms = parseInt(document.getElementById('formBathrooms').value);
+      lead.area = parseInt(document.getElementById('formArea').value) || 0;
+      lead.images = state.selectedPhotos.length > 0 ? [...state.selectedPhotos] : [randomImage()];
+      lead.amenities = [...state.selectedAmenities];
+      lead.contact.name = document.getElementById('formContactName').value.trim();
+      lead.contact.phone = document.getElementById('formContactPhone').value.trim();
+      lead.contact.email = document.getElementById('formContactEmail').value.trim();
+      
+      saveLeads();
+      closeModal('postModal');
+      renderListings();
+      showToast('Listing updated successfully.', 'success');
+      return;
+    }
+  }
 
   const newLead = {
     id:          genId(),
