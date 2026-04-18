@@ -1217,7 +1217,6 @@ function buildCard(lead, index) {
     <div class="card-image">
       <img src="${img}" alt="${lead.title}" loading="lazy" onerror="this.src='${PROPERTY_IMAGES[0]}'" onclick="event.stopPropagation();openLightbox('${lead.id}',0)" style="cursor:zoom-in;" />
       <span class="card-type-badge ${badgeCls}">${badgeTxt}</span>
-      ${isLive ? '<span class="card-verified-badge">✓ Verified</span>' : ''}
       ${isPending ? '<span class="card-status-badge badge-pending">⏳ Pending</span>' : ''}
       ${isRejected ? '<span class="card-status-badge badge-rejected">✕ Rejected</span>' : ''}
       ${images.length > 1 ? `<span class="card-photo-count">📷 ${images.length}</span>` : ''}
@@ -1226,6 +1225,7 @@ function buildCard(lead, index) {
       </button>
     </div>
     <div class="card-body">
+      ${isLive ? '<div style="margin-bottom:8px;"><span class="card-verified-badge">✓ Verified Listing</span></div>' : ''}
       <div class="card-price">${priceStr}<span>${unitStr}</span></div>
       <div class="card-title" title="${lead.title}">${lead.title}</div>
       <div class="card-location">
@@ -1346,6 +1346,25 @@ function openDetail(id) {
     window.location.href = `tel:${lead.contact.phone}`;
     showToast(`Calling ${lead.contact.name}…`, 'success');
   };
+
+  const waBtn = document.getElementById('detailWaBtn');
+  if (waBtn) {
+    waBtn.onclick = () => {
+      const text = encodeURIComponent(`Hi ${lead.contact.name}, I found your property "${lead.title}" on PropNest and I'm interested.`);
+      window.open(`https://wa.me/91${lead.contact.phone}?text=${text}`, '_blank');
+    };
+  }
+
+  const shareBtn = document.getElementById('detailShareBtn');
+  if (shareBtn) {
+    shareBtn.onclick = async () => {
+      const shareData = { title: 'PropNest Listing', text: `Check out ${lead.title}`, url: window.location.href };
+      try {
+        if (navigator.share) await navigator.share(shareData);
+        else { await navigator.clipboard.writeText(window.location.href); showToast('Link copied to clipboard!', 'success'); }
+      } catch (e) { console.error(e); }
+    };
+  }
 
   // Wire up gallery nav inside detail
   document.getElementById('detailGalleryPrev').onclick = () => detailGalleryNav(-1);
