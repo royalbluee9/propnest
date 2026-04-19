@@ -449,6 +449,44 @@ function applyPostFormRoleRestrictions() {
   }
 }
 
+function updateDynamicFormFields() {
+  const propGroup = document.getElementById('formPropType')?.value || 'residential';
+  const leadType = document.getElementById('selectedType')?.value || 'rent';
+
+  const wBeds = document.getElementById('wrapBedrooms');
+  const wBaths = document.getElementById('wrapBathrooms');
+  const lblBaths = document.getElementById('lblBathrooms');
+  const wPhotos = document.getElementById('wrapPhotos');
+  const wAmen = document.getElementById('wrapAmenities');
+
+  if (leadType === 'buy') {
+    if (wPhotos) wPhotos.style.display = 'none';
+  } else {
+    // If not buy, show photos
+    if (wPhotos) wPhotos.style.display = 'block';
+  }
+
+  if (propGroup === 'land') {
+    if (wBeds) wBeds.style.display = 'none';
+    if (wBaths) wBaths.style.display = 'none';
+    if (wAmen) wAmen.style.display = 'none';
+  } else if (propGroup === 'commercial') {
+    if (wBeds) wBeds.style.display = 'none';
+    if (wBaths) { wBaths.style.display = 'block'; if (lblBaths) lblBaths.textContent = 'Washrooms'; }
+    if (wAmen) wAmen.style.display = 'block';
+  } else {
+    // residential
+    if (wBeds) wBeds.style.display = 'block';
+    if (wBaths) { wBaths.style.display = 'block'; if (lblBaths) lblBaths.textContent = 'Bathrooms'; }
+    if (wAmen) wAmen.style.display = 'block';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const formPropType = document.getElementById('formPropType');
+  if (formPropType) formPropType.addEventListener('change', updateDynamicFormFields);
+});
+
 // ── Admin Panel ──────────────────────────────
 function renderAdminPanel() {
   const panel = document.getElementById('adminPanel');
@@ -1234,9 +1272,10 @@ function buildCard(lead, index) {
       </div>
       ${amenShow.length ? `<div class="card-amenities">${amenShow.map(a => `<span class="amenity-tag">${a}</span>`).join('')}</div>` : ''}
       <div class="card-specs">
-        <div class="spec-item"><span class="spec-icon">🛏</span>${lead.bedrooms === 0 ? 'Studio' : lead.bedrooms + ' Bed'}</div>
-        <div class="spec-item"><span class="spec-icon">🚿</span>${lead.bathrooms} Bath</div>
+        ${lead.propertyType !== 'land' && lead.propertyType !== 'commercial' ? `<div class="spec-item"><span class="spec-icon">🛏</span>${lead.bedrooms === 0 ? 'Studio' : lead.bedrooms + ' Bed'}</div>` : ''}
+        ${lead.propertyType !== 'land' ? `<div class="spec-item"><span class="spec-icon">🚿</span>${lead.bathrooms} ${lead.propertyType === 'commercial' ? 'Wash' : 'Bath'}</div>` : ''}
         ${lead.area ? `<div class="spec-item"><span class="spec-icon">📐</span>${fmt(lead.area)} sqft</div>` : ''}
+        ${lead.propertyType === 'land' ? `<div class="spec-item"><span class="spec-icon">🌳</span>Plot/Land</div>` : lead.propertyType === 'commercial' ? `<div class="spec-item"><span class="spec-icon">🏢</span>Commercial</div>` : ''}
       </div>
       <div class="card-footer">
         <div class="card-agent">
@@ -1326,10 +1365,10 @@ function openDetail(id) {
     ${lead.address}, ${lead.city}`;
 
   document.getElementById('detailSpecs').innerHTML = `
-    <div class="detail-spec"><span class="detail-spec-icon">🛏</span><span class="detail-spec-val">${lead.bedrooms === 0 ? 'Studio' : lead.bedrooms}</span><span class="detail-spec-key">Beds</span></div>
-    <div class="detail-spec"><span class="detail-spec-icon">🚿</span><span class="detail-spec-val">${lead.bathrooms}</span><span class="detail-spec-key">Baths</span></div>
+    ${lead.propertyType !== 'land' && lead.propertyType !== 'commercial' ? `<div class="detail-spec"><span class="detail-spec-icon">🛏</span><span class="detail-spec-val">${lead.bedrooms === 0 ? 'Studio' : lead.bedrooms}</span><span class="detail-spec-key">Beds</span></div>` : ''}
+    ${lead.propertyType !== 'land' ? `<div class="detail-spec"><span class="detail-spec-icon">🚿</span><span class="detail-spec-val">${lead.bathrooms}</span><span class="detail-spec-key">${lead.propertyType === 'commercial' ? 'Washrooms' : 'Baths'}</span></div>` : ''}
     ${lead.area ? `<div class="detail-spec"><span class="detail-spec-icon">📐</span><span class="detail-spec-val">${fmt(lead.area)}</span><span class="detail-spec-key">Sq. Ft.</span></div>` : ''}
-    <div class="detail-spec"><span class="detail-spec-icon">🏠</span><span class="detail-spec-val">${lead.type === 'rent' ? 'Rent' : lead.type === 'sell' ? 'Sale' : 'Buy'}</span><span class="detail-spec-key">Type</span></div>
+    <div class="detail-spec"><span class="detail-spec-icon">🏠</span><span class="detail-spec-val">${lead.propertyType === 'commercial' ? 'Commercial' : lead.propertyType === 'land' ? 'Plot/Land' : 'Residential'}</span><span class="detail-spec-key">Category</span></div>
     <div class="detail-spec"><span class="detail-spec-icon">📅</span><span class="detail-spec-val">${formatDate(lead.postedAt)}</span><span class="detail-spec-key">Posted</span></div>
     ${lead.status === 'live' ? `<div class="detail-spec"><span class="detail-spec-icon">✅</span><span class="detail-spec-val" style="color:#4ade80;">Verified</span><span class="detail-spec-key">Status</span></div>` : ''}`;
 
@@ -1384,6 +1423,7 @@ function openPostModal() {
   applyPostFormRoleRestrictions();
   state.selectedPhotos    = [];
   state.selectedAmenities = [];
+  document.getElementById('formPropType').value = 'residential';
   initPhotoSelector();
   buildAmenities();
   openModal('postModal');
@@ -1399,6 +1439,7 @@ function openEditListing(id, e) {
   document.getElementById('submitLead').textContent = 'Save Changes';
 
   // Populate form
+  document.getElementById('formPropType').value = lead.propertyType || 'residential';
   resetTypeButtons(lead.type);
   document.getElementById('formTitle').value = lead.title;
   document.getElementById('formCity').value = lead.city;
@@ -1604,6 +1645,7 @@ function validateAndSubmit() {
       lead.type = type;
       lead.title = document.getElementById('formTitle').value.trim();
       lead.description = document.getElementById('formDescription').value.trim();
+      lead.propertyType = document.getElementById('formPropType')?.value || 'residential';
       lead.city = document.getElementById('formCity').value;
       lead.address = document.getElementById('formAddress').value.trim();
       lead.price = price;
@@ -1628,6 +1670,7 @@ function validateAndSubmit() {
   const newLead = {
     id:          genId(),
     type,
+    propertyType: document.getElementById('formPropType')?.value || 'residential',
     title:       document.getElementById('formTitle').value.trim(),
     description: document.getElementById('formDescription').value.trim(),
     city:        document.getElementById('formCity').value,
@@ -1684,6 +1727,7 @@ function resetTypeButtons(type) {
     if (b.dataset.type === type) b.classList.add(`selected-${type}`);
   });
   document.getElementById('selectedType').value = type;
+  if (typeof updateDynamicFormFields === 'function') updateDynamicFormFields();
 }
 
 // ── Toast ──────────────────────────────────────
