@@ -1280,7 +1280,11 @@ function buildCard(lead, index) {
   const unitStr  = (lead.type === 'rent' && !lead.priceDisplay) ? `/${lead.priceUnit.replace('per ', '')}` : '';
   const badgeCls = `badge-${lead.type}`;
   const badgeTxt = lead.type === 'rent' ? 'For Rent' : lead.type === 'sell' ? 'For Sale' : 'Want to Buy';
-  const amenShow = (lead.amenities || []).slice(0, 3);
+  let amenShow = (lead.amenities || []).slice(0, 3);
+  if (lead.customFields && amenShow.length < 3) {
+    const cfTags = lead.customFields.slice(0, 3 - amenShow.length).map(cf => `${cf.key}: ${cf.value}`);
+    amenShow = amenShow.concat(cfTags);
+  }
   const images   = getLeadImages(lead);
   const img      = images[0];
   const isLive   = lead.status === 'live' || !lead.status;
@@ -1407,13 +1411,20 @@ function openDetail(id) {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
     ${lead.address}, ${lead.city}`;
 
-  document.getElementById('detailSpecs').innerHTML = `
+  let specsHTML = `
     ${lead.propertyType !== 'land' && lead.propertyType !== 'commercial' ? `<div class="detail-spec"><span class="detail-spec-icon">🛏</span><span class="detail-spec-val">${lead.bedrooms === 0 ? 'Studio' : lead.bedrooms}</span><span class="detail-spec-key">Beds</span></div>` : ''}
     ${lead.propertyType !== 'land' ? `<div class="detail-spec"><span class="detail-spec-icon">🚿</span><span class="detail-spec-val">${lead.bathrooms}</span><span class="detail-spec-key">${lead.propertyType === 'commercial' ? 'Washrooms' : 'Baths'}</span></div>` : ''}
     ${lead.area ? `<div class="detail-spec"><span class="detail-spec-icon">📐</span><span class="detail-spec-val">${fmt(lead.area)}</span><span class="detail-spec-key">Sq. Ft.</span></div>` : ''}
     <div class="detail-spec"><span class="detail-spec-icon">🏠</span><span class="detail-spec-val">${lead.propertyType === 'commercial' ? 'Commercial' : lead.propertyType === 'land' ? 'Plot/Land' : 'Residential'}</span><span class="detail-spec-key">Category</span></div>
     <div class="detail-spec"><span class="detail-spec-icon">📅</span><span class="detail-spec-val">${formatDate(lead.postedAt)}</span><span class="detail-spec-key">Posted</span></div>
     ${lead.status === 'live' ? `<div class="detail-spec"><span class="detail-spec-icon">✅</span><span class="detail-spec-val" style="color:#4ade80;">Verified</span><span class="detail-spec-key">Status</span></div>` : ''}`;
+
+  if (lead.customFields && lead.customFields.length > 0) {
+    lead.customFields.forEach(cf => {
+      specsHTML += `<div class="detail-spec"><span class="detail-spec-icon">✨</span><span class="detail-spec-val">${cf.value}</span><span class="detail-spec-key">${cf.key}</span></div>`;
+    });
+  }
+  document.getElementById('detailSpecs').innerHTML = specsHTML;
 
   document.getElementById('detailDesc').textContent = lead.description || 'No description provided.';
 
@@ -1714,6 +1725,7 @@ function validateAndSubmit() {
       lead.contact.name = document.getElementById('formContactName').value.trim();
       lead.contact.phone = document.getElementById('formContactPhone').value.trim();
       lead.contact.email = document.getElementById('formContactEmail').value.trim();
+      lead.customFields = getCustomFieldsFromForm();
       
       saveLeads();
       closeModal('postModal');
@@ -1743,6 +1755,7 @@ function validateAndSubmit() {
       phone: document.getElementById('formContactPhone').value.trim(),
       email: document.getElementById('formContactEmail').value.trim(),
     },
+    customFields: getCustomFieldsFromForm(),
     postedAt:     Date.now(),
     postedBy:     authState.currentUser?.id   || null,
     postedByRole: authState.currentUser?.role || null,
@@ -1757,6 +1770,8 @@ function validateAndSubmit() {
   document.getElementById('postLeadForm').reset();
   state.selectedAmenities = [];
   state.selectedPhotos    = [];
+  document.getElementById('customFieldsContainer').innerHTML = ''; // Clear custom fields
+  document.getElementById('waQuickFill').value = '';
   document.querySelectorAll('.amenity-chip').forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-pressed', 'false'); });
   document.querySelectorAll('.photo-preset-item').forEach(p => p.classList.remove('selected'));
   updateSelectedStrip();
@@ -2527,7 +2542,126 @@ window.toggleLanguage = function() {
     }
   });
 };
+// ══════════════════════════════════════════
+// WHATSAPP AUTO-FILL & CUSTOM FIELDS (PHASE 3 EXTRA)
+// ══════════════════════════════════════════
 
+document.addEventListener('DOMContentLoaded', () => {
+  const btnWaQuickFill = document.getElementById('btnWaQuickFill');
+  const btnAddCustomField = document.getElementById('btnAddCustomField');
+  
+  if (btnWaQuickFill) {
+    btnWaQuickFill.addEventListener('click', () => {
+      const text = document.getElementById('waQuickFill').value;
+      if (!text.trim()) return showToast('Please paste a description first', 'error');
+      parseWhatsAppDescription(text);
+    });
+  }
+
+  if (btnAddCustomField) {
+    btnAddCustomField.addEventListener('click', () => addCustomFieldRow());
+  }
+});
+
+function addCustomFieldRow(key = '', value = '') {
+  const container = document.getElementById('customFieldsContainer');
+  const rowId = `cf-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+  
+  const div = document.createElement('div');
+  div.id = rowId;
+  div.style.display = 'flex';
+  div.style.gap = '8px';
+  div.style.alignItems = 'center';
+  
+  div.innerHTML = `
+    <input type="text" class="form-input cf-key" placeholder="Detail (e.g. Facing)" value="${key}" style="flex:1;">
+    <input type="text" class="form-input cf-val" placeholder="Value (e.g. North)" value="${value}" style="flex:2;">
+    <button type="button" class="btn-secondary" onclick="document.getElementById('${rowId}').remove()" style="padding:8px; border-radius:8px; color:#ef4444; border-color:rgba(239,68,68,0.3);">🗑</button>
+  `;
+  container.appendChild(div);
+}
+
+function getCustomFieldsFromForm() {
+  const container = document.getElementById('customFieldsContainer');
+  if (!container) return [];
+  const rows = container.querySelectorAll('div[id^="cf-"]');
+  const fields = [];
+  rows.forEach(row => {
+    const key = row.querySelector('.cf-key').value.trim();
+    const val = row.querySelector('.cf-val').value.trim();
+    if (key && val) fields.push({ key, value: val });
+  });
+  return fields;
+}
+
+function parseWhatsAppDescription(text) {
+  const t = text.toLowerCase();
+  
+  // 1. Type
+  if (t.includes('rent') || t.includes('lease')) resetTypeButtons('rent');
+  else if (t.includes('sell') || t.includes('sale') || t.includes('selling')) resetTypeButtons('sell');
+  else if (t.includes('buy') || t.includes('looking for')) resetTypeButtons('buy');
+
+  // 2. City
+  const allCities = INDIA_CITIES_BY_STATE.flatMap(s => s.cities);
+  const matchedCity = allCities.find(c => t.includes(c.toLowerCase()));
+  if (matchedCity) {
+    const citySelect = document.getElementById('formCity');
+    // Ensure the city is an option
+    let exists = Array.from(citySelect.options).some(o => o.value === matchedCity);
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = matchedCity; opt.textContent = matchedCity;
+      citySelect.appendChild(opt);
+    }
+    citySelect.value = matchedCity;
+  }
+
+  // 3. Price
+  // Match things like 50k, 50,000, 1.5 cr, 2L
+  const priceMatch = t.match(/([\d,.]+)\s*(k|l|lakh|lakhs|cr|crore)?/);
+  if (priceMatch) {
+    let num = parseFloat(priceMatch[1].replace(/,/g, ''));
+    const mult = priceMatch[2];
+    if (mult === 'k') num *= 1000;
+    else if (mult === 'l' || mult === 'lakh' || mult === 'lakhs') num *= 100000;
+    else if (mult === 'cr' || mult === 'crore') num *= 10000000;
+    document.getElementById('formPrice').value = num;
+  }
+
+  // 4. BHK
+  const bhkMatch = t.match(/(\d+)\s*(bhk|bed|bedroom)/);
+  if (bhkMatch) document.getElementById('formBedrooms').value = bhkMatch[1];
+  
+  const bathMatch = t.match(/(\d+)\s*(bath|bathroom)/);
+  if (bathMatch) document.getElementById('formBathrooms').value = bathMatch[1];
+
+  // 5. Title & Desc
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length > 0) {
+    document.getElementById('formTitle').value = lines[0].substring(0, 100);
+    document.getElementById('formDescription').value = text;
+  }
+
+  // 6. Custom Fields Extraction
+  // Look for lines that look like "Key: Value" or "Key - Value"
+  const cfLines = lines.filter(l => l.includes(':') || l.includes('-'));
+  document.getElementById('customFieldsContainer').innerHTML = ''; // clear existing
+  
+  cfLines.forEach(line => {
+    let parts = line.split(':');
+    if (parts.length < 2) parts = line.split('-');
+    if (parts.length === 2) {
+      const k = parts[0].trim();
+      const v = parts[1].trim();
+      if (k.length > 1 && k.length < 30 && v.length > 1) {
+        addCustomFieldRow(k, v);
+      }
+    }
+  });
+
+  showToast('Magic Fill complete! Please review the extracted details.', 'success');
+}
 document.addEventListener('DOMContentLoaded', () => {
   const langToggle = document.getElementById('langToggle');
   if (langToggle) langToggle.addEventListener('click', toggleLanguage);
