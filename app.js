@@ -1806,8 +1806,10 @@ function setActiveTab(tab) {
   const crm = document.getElementById('crmPanel');
   const inbox = document.getElementById('inboxPanel');
   const hero = document.querySelector('.hero');
+  const agentProfile = document.getElementById('agentProfilePanel');
 
   if (inbox) inbox.style.display = 'none';
+  if (agentProfile) agentProfile.style.display = 'none';
 
   if (tab === 'admin') {
     if (ls) ls.style.display = 'none';
@@ -1863,6 +1865,13 @@ function init() {
   animateCounter(statEl, state.leads.length, '');
 
   renderListings();
+
+  // Check URL routing
+  const params = new URLSearchParams(window.location.search);
+  const agentId = params.get('agent');
+  if (agentId) {
+    setTimeout(() => openBrokerProfile(agentId), 100);
+  }
 
   // ── Nav events ──────────────────────────────
   document.querySelectorAll('.nav-tab').forEach(btn => {
@@ -2020,31 +2029,101 @@ function openBrokerProfile(userId) {
   if (!broker) return showToast('User not found', 'error');
 
   const isPremium = broker.plan === 'premium';
+  
+  // Hide other main panels
+  const ls = document.querySelector('.listings-section');
+  const ss = document.querySelector('.search-section');
+  const ap = document.getElementById('adminPanel');
+  const ip = document.getElementById('inboxPanel');
+  if(ls) ls.style.display = 'none';
+  if(ss) ss.style.display = 'none';
+  if(ap) ap.style.display = 'none';
+  if(ip) ip.style.display = 'none';
 
-  document.getElementById('brokerAvatar').textContent = initials(broker.name);
-  document.getElementById('brokerName').innerHTML = `
+  // Populate data
+  document.getElementById('apAvatar').textContent = initials(broker.name);
+  document.getElementById('apName').innerHTML = `
     ${broker.name}
-    ${isPremium ? '<span style="font-size:0.9rem; color:#f59e0b; margin-left:8px;" title="Premium Agent">👑</span>' : broker.agentVerified ? '<span style="color:#4ade80" title="Verified Agent">✓</span>' : ''}
+    ${isPremium ? '<span style="font-size:1.5rem; color:#f59e0b; margin-left:8px;" title="Premium Agent">👑</span>' : broker.agentVerified ? '<span style="color:#4ade80" title="Verified Agent">✓</span>' : ''}
   `;
-  document.getElementById('brokerRoleBadge').innerHTML = `
+  document.getElementById('apRoleBadge').innerHTML = `
     <span class="role-badge role-${broker.role}">${broker.role}</span>
     ${isPremium ? '<span class="role-badge" style="background:rgba(245,158,11,0.1); color:#f59e0b; border-color:rgba(245,158,11,0.3);">Premium</span>' : ''}
   `;
-  document.getElementById('brokerContactInfo').textContent = `${broker.email} • Phone: ${broker.phone || 'N/A'}`;
+  document.getElementById('apContactInfo').textContent = `${broker.email} • Phone: ${broker.phone || 'N/A'}`;
+
+  // Company Branding
+  const logoEl = document.getElementById('apCompanyLogo');
+  const cnameEl = document.getElementById('apCompanyName');
+  if (broker.companyLogo) {
+    logoEl.src = broker.companyLogo;
+    logoEl.style.display = 'block';
+  } else {
+    logoEl.style.display = 'none';
+  }
+  
+  if (broker.companyName) {
+    cnameEl.textContent = broker.companyName;
+    cnameEl.style.display = 'block';
+  } else {
+    cnameEl.style.display = 'none';
+  }
+
+  // Edit button visibility
+  const editBtn = document.getElementById('apEditBtn');
+  if (authState.currentUser && authState.currentUser.id === userId) {
+    editBtn.style.display = 'inline-block';
+    editBtn.onclick = () => openEditAgentProfile(broker);
+  } else {
+    editBtn.style.display = 'none';
+  }
+
+  // Share button
+  document.getElementById('apShareBtn').onclick = () => {
+    const url = window.location.origin + window.location.pathname + "?agent=" + userId;
+    navigator.clipboard.writeText(url).then(() => showToast('Profile link copied to clipboard!', 'success'));
+  };
 
   const brokerLeads = state.leads.filter(l => l.postedBy === userId && l.status === 'live');
-  const grid = document.getElementById('brokerListingsGrid');
+  const grid = document.getElementById('apListingsGrid');
   if (brokerLeads.length === 0) {
     grid.innerHTML = '<div class="empty-state">No active listings.</div>';
   } else {
-    grid.innerHTML = brokerLeads.map(l => generateCardHTML(l, false)).join('');
+    grid.innerHTML = brokerLeads.map((l, i) => buildCard(l, i)).join('');
   }
 
-  document.getElementById('brokerModal').style.display = 'flex';
+  document.getElementById('agentProfilePanel').style.display = 'block';
+  window.scrollTo(0, 0);
 }
 
-document.getElementById('closeBrokerModal').addEventListener('click', () => {
-  document.getElementById('brokerModal').style.display = 'none';
+// ── Edit Profile ──
+function openEditAgentProfile(broker) {
+  document.getElementById('epCompanyName').value = broker.companyName || '';
+  document.getElementById('epCompanyLogo').value = broker.companyLogo || '';
+  document.getElementById('editProfileModal').style.display = 'flex';
+}
+
+window.saveAgentProfile = function() {
+  const cname = document.getElementById('epCompanyName').value.trim();
+  const clogo = document.getElementById('epCompanyLogo').value.trim();
+  const userId = authState.currentUser.id;
+  
+  const uidx = authState.users.findIndex(u => u.id === userId);
+  if (uidx > -1) {
+    authState.users[uidx].companyName = cname;
+    authState.users[uidx].companyLogo = clogo;
+    authState.currentUser.companyName = cname;
+    authState.currentUser.companyLogo = clogo;
+    localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(authState));
+  }
+  
+  document.getElementById('editProfileModal').style.display = 'none';
+  showToast('Profile updated successfully!', 'success');
+  openBrokerProfile(userId);
+};
+
+document.getElementById('closeEditProfileModal').addEventListener('click', () => {
+  document.getElementById('editProfileModal').style.display = 'none';
 });
 
 // ── Inbox ──
