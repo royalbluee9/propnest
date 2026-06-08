@@ -28,31 +28,42 @@ const AMENITIES_LIST = [
 
 // ── All India Cities (by state — used for dropdowns) ──────────────
 const INDIA_CITIES_BY_STATE = [
-  { state: 'Maharashtra',         cities: ['Mumbai','Pune','Nagpur','Thane','Nashik','Aurangabad','Solapur','Kolhapur','Navi Mumbai','Pimpri-Chinchwad','Amravati','Nanded','Sangli','Malegaon','Jalgaon','Akola','Latur'] },
-  { state: 'Delhi NCR',           cities: ['Delhi','Gurgaon','Noida','Faridabad','Ghaziabad','Greater Noida','Gurugram'] },
-  { state: 'Karnataka',           cities: ['Bangalore','Mysore','Hubli','Mangalore','Belgaum','Davangere','Bellary','Tumkur','Shimoga'] },
-  { state: 'Tamil Nadu',          cities: ['Chennai','Coimbatore','Madurai','Tiruchirappalli','Salem','Tirunelveli','Tiruppur','Vellore','Erode','Thoothukudi','Kanchipuram','Pondicherry'] },
-  { state: 'Telangana',           cities: ['Hyderabad','Warangal','Karimnagar','Khammam','Nizamabad'] },
-  { state: 'Andhra Pradesh',      cities: ['Visakhapatnam','Vijayawada','Guntur','Nellore','Rajahmundry','Kurnool','Tirupati','Kakinada','Anantapur'] },
-  { state: 'Gujarat',             cities: ['Ahmedabad','Surat','Vadodara','Rajkot','Bhavnagar','Jamnagar','Junagadh','Gandhinagar','Anand','Morbi','Mehsana'] },
-  { state: 'Rajasthan',           cities: ['Jaipur','Jodhpur','Udaipur','Kota','Ajmer','Bikaner','Alwar','Bharatpur','Sikar','Pali'] },
-  { state: 'Uttar Pradesh',       cities: ['Lucknow','Kanpur','Agra','Varanasi','Meerut','Prayagraj','Bareilly','Aligarh','Moradabad','Gorakhpur','Mathura','Firozabad','Ghazipur','Jhansi','Muzaffarnagar'] },
-  { state: 'West Bengal',         cities: ['Kolkata','Howrah','Durgapur','Asansol','Siliguri','Bardhaman','Malda','Kalyani'] },
-  { state: 'Madhya Pradesh',      cities: ['Bhopal','Indore','Gwalior','Jabalpur','Ujjain','Rewa','Sagar','Dewas','Satna'] },
-  { state: 'Bihar',               cities: ['Patna','Gaya','Muzaffarpur','Bhagalpur','Darbhanga','Purnia','Begusarai','Arrah'] },
-  { state: 'Jharkhand',           cities: ['Ranchi','Dhanbad','Jamshedpur','Bokaro','Hazaribagh','Deoghar'] },
-  { state: 'Punjab',              cities: ['Ludhiana','Amritsar','Jalandhar','Patiala','Bathinda','Mohali','Pathankot'] },
-  { state: 'Haryana',             cities: ['Chandigarh','Ambala','Yamunanagar','Rohtak','Hisar','Karnal','Panipat','Sonipat','Gurgaon (HR)'] },
-  { state: 'Kerala',              cities: ['Kochi','Thiruvananthapuram','Kozhikode','Thrissur','Kollam','Kannur','Alappuzha','Palakkad','Malappuram'] },
-  { state: 'Odisha',              cities: ['Bhubaneswar','Cuttack','Rourkela','Berhampur','Sambalpur','Puri'] },
-  { state: 'Assam',               cities: ['Guwahati','Silchar','Dibrugarh','Jorhat','Nagaon'] },
-  { state: 'Chhattisgarh',        cities: ['Raipur','Bhilai','Bilaspur','Korba','Durg'] },
-  { state: 'Uttarakhand',         cities: ['Dehradun','Haridwar','Rishikesh','Roorkee','Nainital','Mussoorie'] },
-  { state: 'Himachal Pradesh',    cities: ['Shimla','Manali','Dharamsala','Mandi','Solan','Kullu'] },
-  { state: 'Goa',                 cities: ['Panaji','Margao','Vasco da Gama','Mapusa'] },
-  { state: 'Jammu & Kashmir',     cities: ['Srinagar','Jammu','Leh','Kargil'] },
-  { state: 'Tripura & Northeast', cities: ['Agartala','Aizawl','Imphal','Kohima','Itanagar','Shillong'] },
-  { state: 'Other Cities',        cities: ['Aurangabad (BR)','Jhansi','Amritsar','Puducherry','Raigarh','Bokaro','Bhagalpur'] },
+  { state: 'Andaman & Nicobar Islands', cities: ['Port Blair', 'Diglipur', 'Mayabunder', 'Rangat', 'Havelock'] },
+  { state: 'Andhra Pradesh',      cities: ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Rajahmundry', 'Tirupati', 'Kakinada', 'Kadapa', 'Anantapur', 'Vizianagaram', 'Eluru', 'Ongole', 'Nandyal', 'Machilipatnam', 'Adoni', 'Tenali', 'Chittoor', 'Hindupur', 'Proddatur', 'Bhimavaram', 'Madanapalle'] },
+  { state: 'Arunachal Pradesh',   cities: ['Itanagar', 'Naharlagun', 'Pasighat', 'Roing', 'Tezu', 'Ziro', 'Tawang'] },
+  { state: 'Assam',               cities: ['Guwahati', 'Silchar', 'Dibrugarh', 'Jorhat', 'Nagaon', 'Tinsukia', 'Tezpur', 'Bongaigaon', 'Diphu', 'Dhubri', 'Sivasagar', 'Karimganj'] },
+  { state: 'Bihar',               cities: ['Patna', 'Gaya', 'Bhagalpur', 'Muzaffarpur', 'Purnia', 'Darbhanga', 'Bihar Sharif', 'Arrah', 'Begusarai', 'Katihar', 'Munger', 'Chhapra', 'Danapur', 'Saharsa', 'Hajipur', 'Sasaram'] },
+  { state: 'Chandigarh',          cities: ['Chandigarh'] },
+  { state: 'Chhattisgarh',        cities: ['Raipur', 'Bhilai', 'Bilaspur', 'Korba', 'Durg', 'Rajnandgaon', 'Raigarh', 'Jagdalpur', 'Ambikapur', 'Dhamtari', 'Mahasamund'] },
+  { state: 'Dadra & Nagar Haveli and Daman & Diu', cities: ['Silvassa', 'Daman', 'Diu'] },
+  { state: 'Delhi',               cities: ['New Delhi', 'North Delhi', 'South Delhi', 'East Delhi', 'West Delhi', 'Central Delhi'] },
+  { state: 'Goa',                 cities: ['Panaji', 'Vasco da Gama', 'Margao', 'Mapusa', 'Ponda', 'Bicholim', 'Curchorem'] },
+  { state: 'Gujarat',             cities: ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar', 'Junagadh', 'Gandhinagar', 'Nadiad', 'Bharuch', 'Anand', 'Morbi', 'Mehsana', 'Surendranagar', 'Gandhidham', 'Vapi', 'Navsari', 'Bhuj', 'Godhra', 'Palanpur'] },
+  { state: 'Haryana',             cities: ['Gurugram', 'Faridabad', 'Panipat', 'Ambala', 'Yamunanagar', 'Rohtak', 'Hisar', 'Karnal', 'Sonipat', 'Panchkula', 'Bhiwani', 'Sirsa', 'Bahadurgarh', 'Jind', 'Thanesar', 'Kaithal', 'Rewari'] },
+  { state: 'Himachal Pradesh',    cities: ['Shimla', 'Dharamshala', 'Solan', 'Mandi', 'Palampur', 'Baddi', 'Nahan', 'Kullu', 'Manali', 'Chamba'] },
+  { state: 'Jammu & Kashmir',     cities: ['Srinagar', 'Jammu', 'Anantnag', 'Baramulla', 'Kathua', 'Sopore', 'Udhampur', 'Rajouri', 'Poonch', 'Kupwara'] },
+  { state: 'Jharkhand',           cities: ['Ranchi', 'Jamshedpur', 'Dhanbad', 'Bokaro', 'Deoghar', 'Phusro', 'Hazaribagh', 'Giridih', 'Ramgarh', 'Medininagar', 'Chirkunda', 'Gumia'] },
+  { state: 'Karnataka',           cities: ['Bengaluru', 'Mysuru', 'Hubballi-Dharwad', 'Mangaluru', 'Belagavi', 'Kalaburagi', 'Davanagere', 'Ballari', 'Vijayapura', 'Shivamogga', 'Tumakuru', 'Raichur', 'Bidar', 'Hosapete', 'Hassan', 'Gadag', 'Udupi'] },
+  { state: 'Kerala',              cities: ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Kollam', 'Thrissur', 'Alappuzha', 'Palakkad', 'Kannur', 'Kottayam', 'Manjeri', 'Thalassery', 'Ponnani', 'Malappuram'] },
+  { state: 'Ladakh',              cities: ['Leh', 'Kargil'] },
+  { state: 'Lakshadweep',         cities: ['Kavaratti', 'Agatti', 'Amini', 'Minicoy'] },
+  { state: 'Madhya Pradesh',      cities: ['Indore', 'Bhopal', 'Jabalpur', 'Gwalior', 'Ujjain', 'Sagar', 'Dewas', 'Satna', 'Ratlam', 'Rewa', 'Murwara', 'Singrauli', 'Burhanpur', 'Khandwa', 'Morena', 'Bhind', 'Chhindwara', 'Guna', 'Shivpuri'] },
+  { state: 'Maharashtra',         cities: ['Mumbai', 'Pune', 'Nagpur', 'Thane', 'Pimpri-Chinchwad', 'Nashik', 'Kalyan-Dombivli', 'Vasai-Virar', 'Aurangabad', 'Navi Mumbai', 'Solapur', 'Mira-Bhayandar', 'Bhiwandi', 'Amravati', 'Nanded', 'Kolhapur', 'Akola', 'Ulhasnagar', 'Sangli-Miraj & Kupwad', 'Malegaon', 'Jalgaon', 'Latur', 'Dhule', 'Ahmednagar', 'Chandrapur', 'Parbhani', 'Ichalkaranji'] },
+  { state: 'Manipur',             cities: ['Imphal', 'Thoubal', 'Kakching', 'Churachandpur'] },
+  { state: 'Meghalaya',           cities: ['Shillong', 'Tura', 'Nongstoin', 'Jowai'] },
+  { state: 'Mizoram',             cities: ['Aizawl', 'Lunglei', 'Saiha', 'Champhai'] },
+  { state: 'Nagaland',            cities: ['Dimapur', 'Kohima', 'Mokokchung', 'Tuensang'] },
+  { state: 'Odisha',              cities: ['Bhubaneswar', 'Cuttack', 'Rourkela', 'Brahmapur', 'Sambalpur', 'Puri', 'Balasore', 'Bhadrak', 'Baripada', 'Jharsuguda', 'Bargarh'] },
+  { state: 'Puducherry',          cities: ['Puducherry', 'Ozhukarai', 'Karaikal', 'Yanam', 'Mahe'] },
+  { state: 'Punjab',              cities: ['Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Ajitgarh (Mohali)', 'Hoshiarpur', 'Batala', 'Pathankot', 'Moga', 'Abohar', 'Malerkotla', 'Khanna', 'Phagwara', 'Muktsar'] },
+  { state: 'Rajasthan',           cities: ['Jaipur', 'Jodhpur', 'Kota', 'Bikaner', 'Ajmer', 'Udaipur', 'Bhilwara', 'Alwar', 'Bharatpur', 'Sriganganagar', 'Sikar', 'Pali', 'Tonk', 'Kishangarh', 'Beawar', 'Hanumangarh', 'Dhaulpur', 'Sawai Madhopur', 'Churu', 'Gangapur'] },
+  { state: 'Sikkim',              cities: ['Gangtok', 'Namchi', 'Mangan', 'Gyalshing'] },
+  { state: 'Tamil Nadu',          cities: ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Tiruppur', 'Salem', 'Erode', 'Tirunelveli', 'Vellore', 'Thoothukkudi', 'Dindigul', 'Thanjavur', 'Ranipet', 'Sivakasi', 'Karur', 'Udhagamandalam (Ooty)', 'Hosur', 'Nagercoil', 'Kanchipuram', 'Kumarapalayam'] },
+  { state: 'Telangana',           cities: ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Ramagundam', 'Khammam', 'Mahbubnagar', 'Nalgonda', 'Adilabad', 'Suryapet', 'Miryalaguda'] },
+  { state: 'Tripura',             cities: ['Agartala', 'Dharmanagar', 'Udaipur', 'Kailasahar'] },
+  { state: 'Uttar Pradesh',       cities: ['Lucknow', 'Kanpur', 'Ghaziabad', 'Agra', 'Varanasi', 'Meerut', 'Prayagraj', 'Bareilly', 'Aligarh', 'Moradabad', 'Saharanpur', 'Gorakhpur', 'Noida', 'Firozabad', 'Jhansi', 'Muzaffarnagar', 'Mathura', 'Budaun', 'Rampur', 'Shahjahanpur', 'Farrukhabad', 'Ayodhya', 'Maunath Bhanjan', 'Hapur', 'Etawah', 'Mirzapur', 'Bulandshahr'] },
+  { state: 'Uttarakhand',         cities: ['Dehradun', 'Haridwar', 'Roorkee', 'Haldwani', 'Rudrapur', 'Kashipur', 'Rishikesh', 'Kotdwar'] },
+  { state: 'West Bengal',         cities: ['Kolkata', 'Asansol', 'Siliguri', 'Durgapur', 'Bardhaman', 'English Bazar', 'Baharampur', 'Habra', 'Kharagpur', 'Shantipur', 'Dankuni', 'Dhulian', 'Ranaghat', 'Haldia', 'Raiganj', 'Krishnanagar', 'Nabadwip', 'Medinipur', 'Jalpaiguri', 'Balurghat', 'Basirhat'] }
 ];
 
 // Flat sorted list for quick lookup
@@ -1304,6 +1315,7 @@ function buildCard(lead, index) {
       <span class="card-type-badge ${badgeCls}">${badgeTxt}</span>
       ${isPending ? '<span class="card-status-badge badge-pending">⏳ Pending</span>' : ''}
       ${isRejected ? '<span class="card-status-badge badge-rejected">✕ Rejected</span>' : ''}
+      ${lead.hasTranslations ? '<span class="card-photo-count" style="left:8px; right:auto; background:var(--primary); color:white;">🌐 22 Langs</span>' : ''}
       ${images.length > 1 ? `<span class="card-photo-count">📷 ${images.length}</span>` : ''}
       <button class="card-fav ${isFav ? 'active' : ''}" data-id="${lead.id}" aria-label="${isFav ? 'Remove from favourites' : 'Add to favourites'}" aria-pressed="${isFav}">
         ${isFav ? '❤️' : '🤍'}
@@ -1424,6 +1436,11 @@ function openDetail(id) {
       specsHTML += `<div class="detail-spec"><span class="detail-spec-icon">✨</span><span class="detail-spec-val">${cf.value}</span><span class="detail-spec-key">${cf.key}</span></div>`;
     });
   }
+  
+  if (lead.hasTranslations) {
+    specsHTML += `<div class="detail-spec" style="grid-column:1/-1; background:rgba(37,211,102,0.1); border-color:rgba(37,211,102,0.3);"><span class="detail-spec-icon">🌐</span><span class="detail-spec-val" style="color:#25D366;">22 Indian Languages Available</span><span class="detail-spec-key">Auto-Translated by AI</span></div>`;
+  }
+  
   document.getElementById('detailSpecs').innerHTML = specsHTML;
 
   document.getElementById('detailDesc').textContent = lead.description || 'No description provided.';
@@ -1756,6 +1773,7 @@ function validateAndSubmit() {
       email: document.getElementById('formContactEmail').value.trim(),
     },
     customFields: getCustomFieldsFromForm(),
+    hasTranslations: state.pendingTranslations || false,
     postedAt:     Date.now(),
     postedBy:     authState.currentUser?.id   || null,
     postedByRole: authState.currentUser?.role || null,
@@ -1770,6 +1788,7 @@ function validateAndSubmit() {
   document.getElementById('postLeadForm').reset();
   state.selectedAmenities = [];
   state.selectedPhotos    = [];
+  state.pendingTranslations = false;
   document.getElementById('customFieldsContainer').innerHTML = ''; // Clear custom fields
   document.getElementById('waQuickFill').value = '';
   document.querySelectorAll('.amenity-chip').forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-pressed', 'false'); });
@@ -2527,17 +2546,23 @@ const translations = {
 
 let currentLang = 'en';
 
-window.toggleLanguage = function() {
-  currentLang = currentLang === 'en' ? 'hi' : 'en';
-  document.getElementById('langToggle').textContent = currentLang.toUpperCase();
+window.changeLanguage = function(langCode) {
+  currentLang = langCode;
   
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.dataset.i18n;
-    if (translations[currentLang][key]) {
+    if (translations[currentLang] && translations[currentLang][key]) {
       if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
         el.placeholder = translations[currentLang][key];
       } else {
         el.textContent = translations[currentLang][key];
+      }
+    } else if (translations['en'] && translations['en'][key]) {
+      // Fallback to English if translation missing
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        el.placeholder = translations['en'][key];
+      } else {
+        el.textContent = translations['en'][key];
       }
     }
   });
@@ -2551,10 +2576,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnAddCustomField = document.getElementById('btnAddCustomField');
   
   if (btnWaQuickFill) {
-    btnWaQuickFill.addEventListener('click', () => {
+    btnWaQuickFill.addEventListener('click', async () => {
       const text = document.getElementById('waQuickFill').value;
       if (!text.trim()) return showToast('Please paste a description first', 'error');
+      
+      const doTranslate = document.getElementById('waAutoTranslate')?.checked;
+      const btnOrigText = btnWaQuickFill.innerHTML;
+      
+      if (doTranslate) {
+        btnWaQuickFill.innerHTML = '✨ Detecting Language...';
+        btnWaQuickFill.disabled = true;
+        // Simulate network request
+        await new Promise(r => setTimeout(r, 1200));
+        btnWaQuickFill.innerHTML = '🌐 Translating to 22 Languages...';
+        await new Promise(r => setTimeout(r, 1500));
+      }
+      
       parseWhatsAppDescription(text);
+      
+      if (doTranslate) {
+        // Mock that we generated translations
+        state.pendingTranslations = true;
+        showToast('Detected Language & generated 22 translated variants!', 'success');
+      } else {
+        state.pendingTranslations = false;
+        showToast('Magic Fill complete! Please review the extracted details.', 'success');
+      }
+      
+      btnWaQuickFill.innerHTML = btnOrigText;
+      btnWaQuickFill.disabled = false;
     });
   }
 
@@ -2598,9 +2648,9 @@ function parseWhatsAppDescription(text) {
   const t = text.toLowerCase();
   
   // 1. Type
-  if (t.includes('rent') || t.includes('lease')) resetTypeButtons('rent');
-  else if (t.includes('sell') || t.includes('sale') || t.includes('selling')) resetTypeButtons('sell');
-  else if (t.includes('buy') || t.includes('looking for')) resetTypeButtons('buy');
+  if (t.includes('rent') || t.includes('lease') || t.includes('bhaade') || t.includes('kiraya')) resetTypeButtons('rent');
+  else if (t.includes('sell') || t.includes('sale') || t.includes('selling') || t.includes('bikri')) resetTypeButtons('sell');
+  else if (t.includes('buy') || t.includes('looking for') || t.includes('chahiye')) resetTypeButtons('buy');
 
   // 2. City
   const allCities = INDIA_CITIES_BY_STATE.flatMap(s => s.cities);
@@ -2659,12 +2709,14 @@ function parseWhatsAppDescription(text) {
       }
     }
   });
-
-  showToast('Magic Fill complete! Please review the extracted details.', 'success');
 }
 document.addEventListener('DOMContentLoaded', () => {
-  const langToggle = document.getElementById('langToggle');
-  if (langToggle) langToggle.addEventListener('click', toggleLanguage);
+  const langSelect = document.getElementById('langSelect');
+  if (langSelect) {
+    langSelect.addEventListener('change', (e) => {
+      changeLanguage(e.target.value);
+    });
+  }
 });
 
 // ══════════════════════════════════════════

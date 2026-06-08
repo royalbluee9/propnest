@@ -154,9 +154,32 @@
       <!-- Upgrade Button -->
       <button class="btn-theme-toggle" id="upgradeBtn" style="display:none; width:auto; padding: 0 12px; font-weight:600; color: #f59e0b; border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.05);" title="Upgrade to Premium">👑 <span data-i18n="upgrade">Upgrade</span></button>
 
-      <!-- Language Toggle -->
-      <button class="btn-theme-toggle" id="langToggle" aria-label="Toggle Language" title="Switch Language" style="font-weight:bold; font-size: 0.9rem;">EN</button>
-
+      <!-- Multi-Language Selector -->
+      <select id="langSelect" class="btn-theme-toggle" aria-label="Select Language" title="Select Language" style="font-weight:bold; font-size: 0.9rem; appearance:none; padding-right:12px; cursor:pointer;">
+        <option value="en" selected>EN</option>
+        <option value="hi">HI - Hindi</option>
+        <option value="bn">BN - Bengali</option>
+        <option value="te">TE - Telugu</option>
+        <option value="mr">MR - Marathi</option>
+        <option value="ta">TA - Tamil</option>
+        <option value="gu">GU - Gujarati</option>
+        <option value="ur">UR - Urdu</option>
+        <option value="kn">KN - Kannada</option>
+        <option value="or">OR - Odia</option>
+        <option value="ml">ML - Malayalam</option>
+        <option value="pa">PA - Punjabi</option>
+        <option value="as">AS - Assamese</option>
+        <option value="mai">MAI - Maithili</option>
+        <option value="sat">SAT - Santali</option>
+        <option value="ks">KS - Kashmiri</option>
+        <option value="ne">NE - Nepali</option>
+        <option value="kok">KOK - Konkani</option>
+        <option value="sd">SD - Sindhi</option>
+        <option value="doi">DOI - Dogri</option>
+        <option value="mni">MNI - Manipuri</option>
+        <option value="brx">BRX - Bodo</option>
+        <option value="sa">SA - Sanskrit</option>
+      </select>
       <!-- Dark/Light Mode Toggle -->
       <button class="btn-theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode" title="Toggle theme">
         <span class="theme-icon-dark">🌙</span>
@@ -337,6 +360,10 @@
               WhatsApp Quick Fill
             </label>
             <textarea id="waQuickFill" class="form-textarea" placeholder="Paste WhatsApp description here... e.g. 2BHK in Bandra for 50k rent. Facing North." style="height:80px; margin-bottom:8px;"></textarea>
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
+              <input type="checkbox" id="waAutoTranslate" checked style="width:16px; height:16px; cursor:pointer;" />
+              <label for="waAutoTranslate" style="font-size:0.85rem; cursor:pointer; color:var(--text-primary);">Post in all 22 Indian languages (Auto-translate)</label>
+            </div>
             <button type="button" class="btn-primary" id="btnWaQuickFill" style="background:#25D366; border:none; padding:8px 16px; font-size:0.9rem; font-weight:600; width:100%; border-radius:8px;">✨ Auto-fill Form</button>
             <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px; text-align:center;">Our local heuristics will try to extract details and custom fields.</p>
           </div>
