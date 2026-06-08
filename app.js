@@ -419,6 +419,15 @@ function updateNavForUser() {
   ['tab-mine','mobile-tab-mine'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = showMine  ? '' : 'none'; });
   ['tab-admin','mobile-tab-admin'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = showAdmin ? '' : 'none'; });
   ['tab-favs','mobile-tab-favs'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = ''; });
+
+  const upgradeBtn = document.getElementById('upgradeBtn');
+  if (upgradeBtn) {
+    if (user.role === 'agent' && user.plan !== 'premium') {
+      upgradeBtn.style.display = 'inline-block';
+    } else {
+      upgradeBtn.style.display = 'none';
+    }
+  }
 }
 
 // ── My Listings Count Badge ────────────────────
@@ -505,6 +514,9 @@ function renderAdminPanel() {
   const liveC    = leads.filter(l => l.status === 'live' || !l.status).length;
   const pendingLeads = leads.filter(l => l.status === 'pending');
 
+  const premiumUsers = users.filter(u => u.plan === 'premium').length;
+  const mockMRR = premiumUsers * 999;
+
   panel.style.display = 'block';
   panel.innerHTML = `
     <div class="container" style="padding-bottom:80px;">
@@ -518,6 +530,20 @@ function renderAdminPanel() {
         <div class="admin-stat-card"><div class="admin-stat-icon">🔑</div><div class="admin-stat-num">${rentC}</div><div class="admin-stat-label">Rent</div></div>
         <div class="admin-stat-card"><div class="admin-stat-icon">🏷️</div><div class="admin-stat-num">${sellC}</div><div class="admin-stat-label">Sale</div></div>
         <div class="admin-stat-card"><div class="admin-stat-icon">🛒</div><div class="admin-stat-num">${buyC}</div><div class="admin-stat-label">Buy</div></div>
+      </div>
+
+      <h3 class="admin-section-title" style="margin-top:32px;">📈 Financials & Analytics</h3>
+      <div class="admin-stats" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+        <div class="admin-stat-card" style="border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.02);">
+          <div class="admin-stat-icon">👑</div>
+          <div class="admin-stat-num" style="color:#f59e0b;">${premiumUsers}</div>
+          <div class="admin-stat-label">Premium Subscribers</div>
+        </div>
+        <div class="admin-stat-card" style="border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.02);">
+          <div class="admin-stat-icon">💰</div>
+          <div class="admin-stat-num" style="color:#10b981;">₹${mockMRR.toLocaleString()}</div>
+          <div class="admin-stat-label">Mock MRR</div>
+        </div>
       </div>
 
       ${pendingLeads.length > 0 ? `
@@ -1261,6 +1287,9 @@ function buildCard(lead, index) {
   const isPending = lead.status === 'pending';
   const isRejected = lead.status === 'rejected';
 
+  const posterUser = authState.users.find(u => u.id === lead.postedBy);
+  const isPremium = posterUser && posterUser.plan === 'premium';
+
   return `
   <article class="property-card" data-id="${lead.id}" role="listitem" tabindex="0"
     aria-label="${lead.title} - ${priceStr}"
@@ -1295,7 +1324,7 @@ function buildCard(lead, index) {
         <div class="card-agent">
           <div class="agent-avatar">${initials(lead.contact.name)}</div>
           <div>
-            <div class="agent-name">${lead.contact.name}${lead.postedByRole === 'agent' ? '<span class="agent-verified-badge">✓ Agent</span>' : ''}</div>
+            <div class="agent-name">${lead.contact.name}${isPremium ? '<span class="agent-verified-badge" style="background:rgba(245,158,11,0.1); color:#f59e0b; border-color:rgba(245,158,11,0.3);">👑 Premium</span>' : lead.postedByRole === 'agent' ? '<span class="agent-verified-badge">✓ Agent</span>' : ''}</div>
           </div>
         </div>
         <span class="card-date">${formatDate(lead.postedAt)}</span>
@@ -1987,16 +2016,19 @@ document.addEventListener('DOMContentLoaded', init);
 
 // ── Broker Profile ──
 function openBrokerProfile(userId) {
-  const broker = users.find(u => u.id === userId);
+  const broker = authState.users.find(u => u.id === userId);
   if (!broker) return showToast('User not found', 'error');
+
+  const isPremium = broker.plan === 'premium';
 
   document.getElementById('brokerAvatar').textContent = initials(broker.name);
   document.getElementById('brokerName').innerHTML = `
     ${broker.name}
-    ${broker.agentVerified ? '<span style="color:#4ade80" title="Verified Agent">✓</span>' : ''}
+    ${isPremium ? '<span style="font-size:0.9rem; color:#f59e0b; margin-left:8px;" title="Premium Agent">👑</span>' : broker.agentVerified ? '<span style="color:#4ade80" title="Verified Agent">✓</span>' : ''}
   `;
   document.getElementById('brokerRoleBadge').innerHTML = `
     <span class="role-badge role-${broker.role}">${broker.role}</span>
+    ${isPremium ? '<span class="role-badge" style="background:rgba(245,158,11,0.1); color:#f59e0b; border-color:rgba(245,158,11,0.3);">Premium</span>' : ''}
   `;
   document.getElementById('brokerContactInfo').textContent = `${broker.email} • Phone: ${broker.phone || 'N/A'}`;
 
@@ -2368,3 +2400,161 @@ window.simulateWhatsAppWebhook = function() {
   // Refresh views
   if (state.activeTab === 'admin') renderAdminPanel();
 };
+
+// ══════════════════════════════════════════
+// MULTILINGUAL (i18n) (Phase 3)
+// ══════════════════════════════════════════
+const translations = {
+  en: {
+    hero_badge: "India's fastest growing property platform",
+    hero_title1: "Find Your",
+    hero_title2: "Dream Property",
+    hero_desc: "Post leads for rent, sell, or buy — connect with verified owners, agents, and buyers across India.",
+    tab_all: "All",
+    tab_rent: "🔑 Rent",
+    tab_sell: "🏷️ Sell",
+    tab_buy: "🛒 Buy",
+    post_lead: "Post Lead",
+    upgrade: "Upgrade"
+  },
+  hi: {
+    hero_badge: "भारत का सबसे तेज़ी से बढ़ता प्रॉपर्टी प्लेटफॉर्म",
+    hero_title1: "अपना सपनों का",
+    hero_title2: "घर खोजें",
+    hero_desc: "किराये, बिक्री या खरीद के लिए लीड पोस्ट करें — भारत भर में सत्यापित मालिकों, एजेंटों और खरीदारों से जुड़ें।",
+    tab_all: "सभी",
+    tab_rent: "🔑 किराये पर",
+    tab_sell: "🏷️ बिक्री",
+    tab_buy: "🛒 खरीदें",
+    post_lead: "लीड डालें",
+    upgrade: "प्रीमियम"
+  }
+};
+
+let currentLang = 'en';
+
+window.toggleLanguage = function() {
+  currentLang = currentLang === 'en' ? 'hi' : 'en';
+  document.getElementById('langToggle').textContent = currentLang.toUpperCase();
+  
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (translations[currentLang][key]) {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        el.placeholder = translations[currentLang][key];
+      } else {
+        el.textContent = translations[currentLang][key];
+      }
+    }
+  });
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const langToggle = document.getElementById('langToggle');
+  if (langToggle) langToggle.addEventListener('click', toggleLanguage);
+});
+
+// ══════════════════════════════════════════
+// PAID PLANS & MOCK CHECKOUT (Phase 3)
+// ══════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  const upgradeBtn = document.getElementById('upgradeBtn');
+  const rzpModal = document.getElementById('razorpayModal');
+  const rzpSuccess = document.getElementById('rzpSuccessBtn');
+  const rzpCancel = document.getElementById('rzpCancelBtn');
+
+  if (upgradeBtn) {
+    upgradeBtn.addEventListener('click', () => {
+      if (!authState.currentUser) return showAuthScreen();
+      rzpModal.style.display = 'flex';
+    });
+  }
+
+  if (rzpCancel) {
+    rzpCancel.addEventListener('click', () => rzpModal.style.display = 'none');
+  }
+
+  if (rzpSuccess) {
+    rzpSuccess.addEventListener('click', () => {
+      // Mock payment success
+      rzpModal.style.display = 'none';
+      if (authState.currentUser) {
+        authState.currentUser.plan = 'premium';
+        
+        // Update user in authState.users array
+        const uidx = authState.users.findIndex(u => u.id === authState.currentUser.id);
+        if (uidx > -1) authState.users[uidx].plan = 'premium';
+        
+        localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(authState));
+        showToast('Payment successful! You are now Premium 👑', 'success');
+        updateNavForUser();
+        renderListings();
+      }
+    });
+  }
+});
+
+// ══════════════════════════════════════════
+// AI ASSISTANT WIDGET (Phase 3)
+// ══════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fab = document.getElementById('aiFab');
+  const widget = document.getElementById('aiWidget');
+  const closeBtn = document.getElementById('closeAiWidget');
+  const sendBtn = document.getElementById('aiSendBtn');
+  const input = document.getElementById('aiInput');
+  const msgContainer = document.getElementById('aiChatMessages');
+
+  if (fab) fab.addEventListener('click', () => widget.style.display = 'flex');
+  if (closeBtn) closeBtn.addEventListener('click', () => widget.style.display = 'none');
+
+  function addAiMessage(text, type = 'sent') {
+    const div = document.createElement('div');
+    div.className = `chat-bubble ${type}`;
+    div.textContent = text;
+    msgContainer.appendChild(div);
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+  }
+
+  function handleAiQuery(query) {
+    query = query.toLowerCase();
+    addAiMessage(query, 'sent');
+    input.value = '';
+
+    // Simple heuristic parser
+    setTimeout(() => {
+      let type = null;
+      if (query.includes('rent')) type = 'rent';
+      if (query.includes('buy') || query.includes('sell')) type = 'sell';
+
+      let results = state.leads.filter(l => l.status === 'live');
+      if (type) results = results.filter(l => l.type === type);
+      
+      const cityMatch = INDIA_CITIES_BY_STATE.flatMap(s => s.cities).find(c => query.includes(c.toLowerCase()));
+      if (cityMatch) results = results.filter(l => l.city.toLowerCase() === cityMatch.toLowerCase());
+
+      if (results.length > 0) {
+        const top = results.slice(0, 2);
+        addAiMessage(`I found ${results.length} matching properties! Here are the top ones:`, 'received');
+        top.forEach(l => {
+          addAiMessage(`- ${l.title} in ${l.city} (${formatPrice(l)})`, 'received');
+        });
+      } else {
+        addAiMessage(`I couldn't find any exact matches for that query. Try adjusting your search!`, 'received');
+      }
+    }, 600);
+  }
+
+  if (sendBtn) {
+    sendBtn.addEventListener('click', () => {
+      if (input.value.trim()) handleAiQuery(input.value.trim());
+    });
+  }
+  if (input) {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && input.value.trim()) handleAiQuery(input.value.trim());
+    });
+  }
+});
