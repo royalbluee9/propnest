@@ -9,6 +9,7 @@ const STORAGE_KEY_LEADS   = 'propnest_leads';
 const STORAGE_KEY_FAVS    = 'propnest_favs';
 const STORAGE_KEY_USERS   = 'propnest_users';
 const STORAGE_KEY_SESSION = 'propnest_session';
+const STORAGE_KEY_CHATS   = 'propnest_chats';
 
 // ── Cloudinary Config ──────────────────────────
 // These are SAFE to expose: only the cloud name and an unsigned upload preset are used.
@@ -242,6 +243,7 @@ let authState = {
 let state = {
   leads:       [],
   favourites:  [],
+  chats:       [],
   activeTab:   'all',
   searchQuery: '',
   filterCity:  '',
@@ -291,6 +293,8 @@ function loadFromStorage() {
   try {
     const leads = JSON.parse(localStorage.getItem(STORAGE_KEY_LEADS) || 'null');
     const favs  = JSON.parse(localStorage.getItem(STORAGE_KEY_FAVS)  || '[]');
+    const chats = JSON.parse(localStorage.getItem(STORAGE_KEY_CHATS) || '[]');
+    state.chats = chats;
     if (!leads) {
       // First run — seed data
       state.leads      = [...SEED_LEADS];
@@ -308,7 +312,8 @@ function loadFromStorage() {
 }
 
 function saveLeads()     { localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(state.leads)); }
-function saveFavourites(){ localStorage.setItem(STORAGE_KEY_FAVS,  JSON.stringify(state.favourites)); }
+function saveFavourites(){ localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(state.favourites)); }
+function saveChats()     { localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(state.chats)); }
 
 // ══════════════════════════════════════════
 // AUTH MODULE
@@ -594,6 +599,15 @@ function renderAdminPanel() {
           }).join('')}
         </tbody></table>
       </div>
+
+      <!-- Webhook Tester -->
+      <div class="webhook-tester" id="webhookTester">
+        <h3 class="admin-section-title">🤖 WhatsApp Intake (Webhook Mock)</h3>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:8px;">Paste a mock WhatsApp message below. The system will parse it to auto-create a draft listing.</p>
+        <textarea id="webhookPayload" placeholder='e.g. "I have a 2 BHK in Bandra for 40000 rent. Amenities: Gym, Parking"'></textarea>
+        <button class="btn-primary" onclick="simulateWhatsAppWebhook()">Simulate Incoming Webhook</button>
+      </div>
+
     </div>`;
 }
 
@@ -1405,6 +1419,19 @@ function openDetail(id) {
     };
   }
 
+  const chatBtn = document.getElementById('detailChatBtn');
+  if (chatBtn) {
+    // Show chat button if someone is logged in and it's not their own lead
+    const myId = authState.currentUser ? authState.currentUser.id : null;
+    const isMine = myId && lead.postedBy === myId;
+    // We only enable chat if the lead has a postedBy (broker ID)
+    if (lead.postedBy && !isMine) {
+      chatBtn.style.display = 'inline-block';
+    } else {
+      chatBtn.style.display = 'none';
+    }
+  }
+
   // Wire up gallery nav inside detail
   document.getElementById('detailGalleryPrev').onclick = () => detailGalleryNav(-1);
   document.getElementById('detailGalleryNext').onclick = () => detailGalleryNav(1);
@@ -1747,15 +1774,32 @@ function setActiveTab(tab) {
   const ls = document.querySelector('.listings-section');
   const ss = document.querySelector('.search-section');
   const ap = document.getElementById('adminPanel');
+  const crm = document.getElementById('crmPanel');
+  const inbox = document.getElementById('inboxPanel');
+  const hero = document.querySelector('.hero');
+
+  if (inbox) inbox.style.display = 'none';
 
   if (tab === 'admin') {
     if (ls) ls.style.display = 'none';
     if (ss) ss.style.display = 'none';
+    if (crm) crm.style.display = 'none';
+    if (hero) hero.style.display = 'none';
+    if (ap) ap.style.display = 'block';
     renderAdminPanel();
+  } else if (tab === 'mine') {
+    if (ls) ls.style.display = 'none';
+    if (ss) ss.style.display = 'none';
+    if (ap) ap.style.display = 'none';
+    if (hero) hero.style.display = 'none';
+    if (crm) crm.style.display = 'block';
+    renderCRMBoard();
   } else {
     if (ls) ls.style.display = '';
     if (ss) ss.style.display = '';
+    if (hero) hero.style.display = '';
     if (ap) ap.style.display = 'none';
+    if (crm) crm.style.display = 'none';
     renderListings();
   }
 
@@ -1936,3 +1980,391 @@ function debounce(fn, ms) {
 window.openDetail    = openDetail;
 window.openPostModal = openPostModal;
 document.addEventListener('DOMContentLoaded', init);
+
+// ══════════════════════════════════════════
+// BROKER PROFILES & CHAT MODULE
+// ══════════════════════════════════════════
+
+// ── Broker Profile ──
+function openBrokerProfile(userId) {
+  const broker = users.find(u => u.id === userId);
+  if (!broker) return showToast('User not found', 'error');
+
+  document.getElementById('brokerAvatar').textContent = initials(broker.name);
+  document.getElementById('brokerName').innerHTML = `
+    ${broker.name}
+    ${broker.agentVerified ? '<span style="color:#4ade80" title="Verified Agent">✓</span>' : ''}
+  `;
+  document.getElementById('brokerRoleBadge').innerHTML = `
+    <span class="role-badge role-${broker.role}">${broker.role}</span>
+  `;
+  document.getElementById('brokerContactInfo').textContent = `${broker.email} • Phone: ${broker.phone || 'N/A'}`;
+
+  const brokerLeads = state.leads.filter(l => l.postedBy === userId && l.status === 'live');
+  const grid = document.getElementById('brokerListingsGrid');
+  if (brokerLeads.length === 0) {
+    grid.innerHTML = '<div class="empty-state">No active listings.</div>';
+  } else {
+    grid.innerHTML = brokerLeads.map(l => generateCardHTML(l, false)).join('');
+  }
+
+  document.getElementById('brokerModal').style.display = 'flex';
+}
+
+document.getElementById('closeBrokerModal').addEventListener('click', () => {
+  document.getElementById('brokerModal').style.display = 'none';
+});
+
+// ── Inbox ──
+function renderInbox() {
+  if (!authState.currentUser) return;
+  const myId = authState.currentUser.id;
+  
+  // Find all chats where user is buyer or broker
+  const myChats = state.chats.filter(c => c.buyerId === myId || c.brokerId === myId);
+  const list = document.getElementById('inboxList');
+  
+  if (myChats.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="text-align:center; padding: 40px;">No messages yet.</div>';
+    return;
+  }
+
+  // Sort by latest message timestamp
+  myChats.sort((a, b) => {
+    const timeA = a.messages.length ? a.messages[a.messages.length - 1].timestamp : 0;
+    const timeB = b.messages.length ? b.messages[b.messages.length - 1].timestamp : 0;
+    return timeB - timeA;
+  });
+
+  list.innerHTML = myChats.map(chat => {
+    const isBuyer = chat.buyerId === myId;
+    const otherUserId = isBuyer ? chat.brokerId : chat.buyerId;
+    const otherUser = users.find(u => u.id === otherUserId) || { name: 'Unknown User' };
+    const lead = state.leads.find(l => l.id === chat.propertyId);
+    const title = lead ? lead.title : 'Deleted Property';
+    const lastMsg = chat.messages.length ? chat.messages[chat.messages.length - 1] : null;
+    const lastText = lastMsg ? lastMsg.text : 'No messages';
+    const time = lastMsg ? new Date(lastMsg.timestamp).toLocaleDateString() : '';
+
+    return `
+      <div class="inbox-item" onclick="openChat('${chat.propertyId}', '${chat.brokerId}')">
+        <div class="inbox-avatar">${initials(otherUser.name)}</div>
+        <div class="inbox-details">
+          <div class="inbox-title">${otherUser.name} <span style="font-weight:400; font-size:0.9rem; color:var(--text-muted)">via ${title}</span></div>
+          <div class="inbox-last-msg">${lastText}</div>
+        </div>
+        <div class="inbox-time">${time}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── Chat Flow ──
+let currentChatId = null;
+
+function openChat(propertyId, brokerId) {
+  if (!authState.currentUser) {
+    showToast('Please login to chat', 'error');
+    return document.getElementById('authScreen').style.display = 'flex';
+  }
+  
+  const lead = state.leads.find(l => l.id === propertyId);
+  const broker = users.find(u => u.id === brokerId);
+  const myId = authState.currentUser.id;
+  
+  if (!lead || !broker) return showToast('Property or Broker not found', 'error');
+
+  // Find existing chat or create new
+  const isBuyer = myId !== brokerId;
+  const actualBuyerId = isBuyer ? myId : null; // If a broker opens it, they must click from inbox, so it's already created.
+  
+  let chat = state.chats.find(c => c.propertyId === propertyId && c.brokerId === brokerId && (isBuyer ? c.buyerId === myId : true));
+  
+  if (!chat && isBuyer) {
+    chat = {
+      id: 'chat-' + Date.now(),
+      propertyId,
+      brokerId,
+      buyerId: myId,
+      messages: []
+    };
+    state.chats.push(chat);
+    saveChats();
+  }
+
+  if (!chat) return showToast('Chat not found', 'error');
+
+  currentChatId = chat.id;
+  const otherUser = users.find(u => u.id === (isBuyer ? brokerId : chat.buyerId)) || { name: 'Unknown' };
+
+  document.getElementById('chatModalTitle').textContent = otherUser.name;
+  document.getElementById('chatModalSubtitle').textContent = lead.title;
+  
+  renderChatMessages(chat);
+  document.getElementById('chatModal').style.display = 'flex';
+  
+  // Close detail modal if open
+  document.getElementById('detailModal').style.display = 'none';
+}
+
+function renderChatMessages(chat) {
+  const container = document.getElementById('chatMessages');
+  if (chat.messages.length === 0) {
+    container.innerHTML = '<div style="text-align:center; color:var(--text-muted); margin-top: auto; margin-bottom: auto;">Start the conversation!</div>';
+    return;
+  }
+
+  const myId = authState.currentUser.id;
+  container.innerHTML = chat.messages.map(m => {
+    const isMe = m.senderId === myId;
+    const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="chat-bubble ${isMe ? 'sent' : 'received'}">
+        ${m.text}
+        <span class="chat-time">${time}</span>
+      </div>
+    `;
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+document.getElementById('sendChatBtn').addEventListener('click', () => {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || !currentChatId || !authState.currentUser) return;
+
+  const chat = state.chats.find(c => c.id === currentChatId);
+  if (chat) {
+    chat.messages.push({
+      senderId: authState.currentUser.id,
+      text,
+      timestamp: Date.now()
+    });
+    saveChats();
+    renderChatMessages(chat);
+    input.value = '';
+    renderInbox(); // Update last message in inbox if it's open
+  }
+});
+
+document.getElementById('chatInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') document.getElementById('sendChatBtn').click();
+});
+
+document.getElementById('closeChatModal').addEventListener('click', () => {
+  document.getElementById('chatModal').style.display = 'none';
+  currentChatId = null;
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Inbox tabs
+  ['tab-msgs', 'mobile-tab-msgs'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) {
+      el.addEventListener('click', () => {
+        if (!authState.currentUser) {
+           showToast('Please login to view messages', 'error');
+           return document.getElementById('authScreen').style.display = 'flex';
+        }
+        // Hide others, show inbox
+        document.getElementById('main-content').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('inboxPanel').style.display = 'block';
+        document.querySelector('.hero').style.display = 'none';
+        document.querySelector('.search-section').style.display = 'none';
+        
+        // Remove active class from nav
+        document.querySelectorAll('.nav-tab, .mobile-nav-tab').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        
+        if (id.startsWith('mobile')) {
+           document.getElementById('mobileNav').classList.remove('active');
+           document.getElementById('navBurger').classList.remove('active');
+        }
+        
+        renderInbox();
+      });
+    }
+  });
+
+  // Broker name click
+  const nameEl = document.getElementById('detailContactName');
+  if (nameEl) {
+    nameEl.style.cursor = 'pointer';
+    nameEl.style.color = 'var(--primary)';
+    nameEl.style.textDecoration = 'underline';
+    nameEl.addEventListener('click', (e) => {
+      const leadId = document.getElementById('detailFavBtn').dataset.id;
+      const lead = state.leads.find(l => l.id === leadId);
+      if (lead && lead.postedBy) {
+        openBrokerProfile(lead.postedBy);
+      }
+    });
+  }
+
+  // Chat Btn click
+  const chatBtn = document.getElementById('detailChatBtn');
+  if (chatBtn) {
+    chatBtn.addEventListener('click', () => {
+      const leadId = document.getElementById('detailFavBtn').dataset.id;
+      const lead = state.leads.find(l => l.id === leadId);
+      if (lead && lead.postedBy) {
+        openChat(lead.id, lead.postedBy);
+      }
+    });
+  }
+
+  // Intercept tab changes to hide inbox
+  const originalTabClick = document.querySelectorAll('.nav-tab[data-tab], .mobile-nav-tab[data-tab]');
+  originalTabClick.forEach(btn => {
+    const tab = btn.dataset.tab;
+    if (tab !== 'msgs' && tab !== 'admin') {
+      btn.addEventListener('click', () => {
+        const inbox = document.getElementById('inboxPanel');
+        if (inbox) inbox.style.display = 'none';
+      });
+    }
+  });
+});
+
+// ══════════════════════════════════════════
+// CRM DASHBOARD (Phase 2)
+// ══════════════════════════════════════════
+
+function renderCRMBoard() {
+  if (!authState.currentUser) return;
+  const myId = authState.currentUser.id;
+  const myLeads = state.leads.filter(l => l.postedBy === myId);
+  const board = document.getElementById('crmBoard');
+
+  if (myLeads.length === 0) {
+    board.innerHTML = '<div class="empty-state" style="width:100%; text-align:center; padding: 40px;">No leads found. Post a property to start managing.</div>';
+    return;
+  }
+
+  const stages = ['draft', 'active', 'negotiation', 'closed'];
+  const stageLabels = {
+    draft: 'Draft',
+    active: 'Active',
+    negotiation: 'In Negotiation',
+    closed: 'Closed / Sold'
+  };
+
+  board.innerHTML = stages.map(stage => {
+    // Ensure leads have a default stage if undefined
+    const stageLeads = myLeads.filter(l => (l.stage || 'active') === stage);
+    
+    return `
+      <div class="crm-column" data-stage="${stage}">
+        <div class="crm-column-header">
+          <span>${stageLabels[stage]}</span>
+          <span style="background:var(--bg-color); padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;">${stageLeads.length}</span>
+        </div>
+        <div class="crm-column-cards">
+          ${stageLeads.map(l => {
+            return `
+              <div class="crm-card" onclick="openDetail('${l.id}')">
+                <div class="crm-card-price">${formatPrice(l)}${l.type==='rent'?'/mo':''}</div>
+                <div class="crm-card-title" title="${l.title}">${l.title}</div>
+                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">${l.city}</div>
+                <select class="crm-stage-select" onclick="event.stopPropagation()" onchange="changeLeadStage('${l.id}', this.value)">
+                  ${stages.map(s => `<option value="${s}" ${s === stage ? 'selected' : ''}>Move to: ${stageLabels[s]}</option>`).join('')}
+                </select>
+              </div>
+            `;
+          }).join('')}
+          ${stageLeads.length === 0 ? `<div style="text-align:center; padding: 20px; color:var(--text-muted); font-size:0.9rem; border:1px dashed var(--border); border-radius:8px;">Drop here</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.changeLeadStage = function(leadId, newStage) {
+  const lead = state.leads.find(l => l.id === leadId);
+  if (lead) {
+    lead.stage = newStage;
+    saveLeads();
+    renderCRMBoard();
+    showToast(`Lead moved to ${newStage}`, 'success');
+  }
+};
+
+// ══════════════════════════════════════════
+// WHATSAPP WEBHOOK PARSER (Phase 2)
+// ══════════════════════════════════════════
+
+window.simulateWhatsAppWebhook = function() {
+  const input = document.getElementById('webhookPayload');
+  if (!input) return;
+  const text = input.value.trim().toLowerCase();
+  if (!text) return showToast('Please enter a mock message', 'error');
+
+  // Simple Regex-based Entity Extraction Mock
+  let extractedCity = 'Unknown';
+  const knownCities = INDIA_CITIES_BY_STATE.flatMap(s => s.cities).map(c => c.toLowerCase());
+  for (let city of knownCities) {
+    if (text.includes(city)) {
+      extractedCity = city.charAt(0).toUpperCase() + city.slice(1);
+      break;
+    }
+  }
+
+  let extractedType = 'rent';
+  if (text.includes('sell') || text.includes('sale') || text.includes('crore') || text.includes('lakh')) {
+    extractedType = 'sell';
+  }
+
+  let extractedBeds = 1;
+  const bedMatch = text.match(/(\d+)\s*(bhk|bed)/i);
+  if (bedMatch) {
+    extractedBeds = parseInt(bedMatch[1]);
+  }
+
+  let extractedPrice = 0;
+  // Match things like 40000, 40k, 1.5 cr
+  const priceMatch = text.match(/(\d+(?:\.\d+)?)\s*(k|lakh|cr|thousand)?/i);
+  if (priceMatch) {
+    let rawNum = parseFloat(priceMatch[1]);
+    let suffix = priceMatch[2] ? priceMatch[2].toLowerCase() : '';
+    if (suffix === 'k' || suffix === 'thousand') extractedPrice = rawNum * 1000;
+    else if (suffix === 'lakh') extractedPrice = rawNum * 100000;
+    else if (suffix === 'cr') extractedPrice = rawNum * 10000000;
+    else extractedPrice = rawNum;
+  }
+
+  // Generate Lead
+  const newLead = {
+    id: genId(),
+    type: extractedType,
+    status: 'pending', // Requires admin approval or direct broker activation
+    stage: 'draft',    // Broker CRM Stage
+    title: `[WA Auto] ${extractedBeds} BHK in ${extractedCity}`,
+    description: `Auto-generated from WhatsApp. Original message: "${input.value}"`,
+    city: extractedCity,
+    address: 'To be updated',
+    price: extractedPrice || 0,
+    priceUnit: extractedType === 'rent' ? 'per month' : 'total',
+    bedrooms: extractedBeds,
+    bathrooms: extractedBeds > 1 ? extractedBeds - 1 : 1,
+    area: extractedBeds * 500,
+    images: [PROPERTY_IMAGES[Math.floor(Math.random() * PROPERTY_IMAGES.length)]],
+    amenities: ['Parking', 'Security'],
+    postedBy: authState.currentUser?.id || 'admin',
+    contact: {
+      name: authState.currentUser?.name || 'WhatsApp User',
+      phone: authState.currentUser?.phone || '+910000000000',
+      email: authState.currentUser?.email || 'wa@example.com'
+    },
+    postedAt: Date.now()
+  };
+
+  state.leads.push(newLead);
+  saveLeads();
+
+  showToast('Webhook processed! Draft lead created.', 'success');
+  input.value = '';
+  
+  // Refresh views
+  if (state.activeTab === 'admin') renderAdminPanel();
+};

@@ -143,6 +143,7 @@
         <button class="nav-tab"        data-tab="buy"  role="tab" aria-selected="false" id="tab-buy">🛒 Buy</button>
         <button class="nav-tab" data-tab="mine" role="tab" aria-selected="false" id="tab-mine" style="display:none;">📋 Mine</button>
         <button class="nav-tab" data-tab="favs" role="tab" aria-selected="false" id="tab-favs" style="display:none;">❤️ Favourites</button>
+        <button class="nav-tab" data-tab="msgs" role="tab" aria-selected="false" id="tab-msgs" style="display:none;">💬 Messages</button>
         <button class="nav-tab" data-tab="admin" role="tab" aria-selected="false" id="tab-admin" style="display:none;">⚙️ Admin</button>
       </div>
 
@@ -180,6 +181,7 @@
     <button class="mobile-nav-tab"        data-tab="buy"  role="menuitem">🛒 Looking to Buy</button>
     <button class="mobile-nav-tab" data-tab="mine"  id="mobile-tab-mine"  role="menuitem" style="display:none;">📋 My Listings</button>
     <button class="mobile-nav-tab" data-tab="favs"  id="mobile-tab-favs"  role="menuitem" style="display:none;">❤️ Favourites</button>
+    <button class="mobile-nav-tab" data-tab="msgs"  id="mobile-tab-msgs"  role="menuitem" style="display:none;">💬 Messages</button>
     <button class="mobile-nav-tab" data-tab="admin" id="mobile-tab-admin" role="menuitem" style="display:none;">⚙️ Admin Panel</button>
     <button class="mobile-nav-tab" id="mobilePostLead" role="menuitem" style="background:rgba(124,92,252,0.15);color:var(--primary-light);border-color:rgba(124,92,252,0.3);">＋ Post Lead</button>
   </div>
@@ -279,6 +281,19 @@
 
   <!-- ── Admin Panel ──────────────────────── -->
   <section class="admin-panel" id="adminPanel" style="display:none;" aria-label="Admin Dashboard"></section>
+  <section class="crm-panel" id="crmPanel" style="display:none;" aria-label="Broker Dashboard">
+    <div class="container">
+      <div class="listings-header">
+        <div>
+          <h2 class="listings-title">📊 CRM Dashboard</h2>
+          <p class="listings-count">Manage your leads and deals</p>
+        </div>
+      </div>
+      <div class="crm-board" id="crmBoard">
+        <!-- Kanban columns injected via JS -->
+      </div>
+    </div>
+  </section>
 
   <!-- ── Footer ────────────────────────────── -->
   <footer class="footer" role="contentinfo">
@@ -518,9 +533,70 @@
           <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
             <button class="btn-call" id="detailCallBtn" aria-label="Call owner">📞 Call</button>
             <button class="btn-whatsapp" id="detailWaBtn" aria-label="WhatsApp owner">💬 WhatsApp</button>
+            <button class="btn-chat" id="detailChatBtn" aria-label="In-App Chat" style="display:none;">💬 Chat</button>
             <button class="btn-share" id="detailShareBtn" aria-label="Share listing">🔗 Share</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       BROKER PROFILE MODAL
+  ══════════════════════════════════════ -->
+  <div class="modal-overlay" id="brokerModal" role="dialog" aria-modal="true" aria-labelledby="brokerModalTitle" style="display:none;">
+    <div class="modal" role="document">
+      <div class="modal-header" style="border-bottom:none; padding-bottom:0;">
+        <button class="modal-close" id="closeBrokerModal" aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="broker-header" style="text-align:center; padding-bottom: 24px; border-bottom: 1px solid var(--border);">
+          <div class="broker-avatar" id="brokerAvatar" style="width:80px; height:80px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:700; margin:0 auto 16px;"></div>
+          <h2 class="broker-name" id="brokerName" style="margin-bottom:8px; font-size:1.5rem; display:flex; align-items:center; justify-content:center; gap:8px;"></h2>
+          <div class="broker-role-badge" id="brokerRoleBadge" style="margin-bottom: 16px;"></div>
+          <p class="broker-contact" id="brokerContactInfo" style="color:var(--text-muted); font-size:0.95rem;"></p>
+        </div>
+        <div class="broker-portfolio" style="margin-top: 24px;">
+          <h3 style="margin-bottom: 16px; font-size: 1.25rem;">Properties Listed</h3>
+          <div class="listings-grid" id="brokerListingsGrid" role="list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       INBOX MODAL
+  ══════════════════════════════════════ -->
+  <section class="inbox-panel" id="inboxPanel" style="display:none;" aria-label="Messages Inbox">
+    <div class="container">
+      <div class="listings-header">
+        <div>
+          <h2 class="listings-title">💬 Messages</h2>
+          <p class="listings-count">Your ongoing conversations</p>
+        </div>
+      </div>
+      <div class="inbox-list" id="inboxList"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       CHAT MODAL
+  ══════════════════════════════════════ -->
+  <div class="modal-overlay" id="chatModal" role="dialog" aria-modal="true" aria-labelledby="chatModalTitle" style="display:none;">
+    <div class="modal chat-modal" role="document" style="padding: 0; display: flex; flex-direction: column; max-width: 500px; height: 80vh;">
+      <div class="modal-header chat-header" style="background: var(--surface-light); border-bottom: 1px solid var(--border); padding: 16px; flex-shrink: 0;">
+        <div>
+          <h2 class="modal-title" id="chatModalTitle" style="font-size: 1.25rem;">Chat</h2>
+          <p class="chat-subtitle" id="chatModalSubtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;"></p>
+        </div>
+        <button class="modal-close" id="closeChatModal" aria-label="Close chat">✕</button>
+      </div>
+      <div class="chat-messages" id="chatMessages" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: var(--bg-color);">
+        <!-- Messages will be rendered here -->
+      </div>
+      <div class="chat-input-area" style="padding: 16px; border-top: 1px solid var(--border); background: var(--surface); display: flex; gap: 8px;">
+        <input type="text" id="chatInput" class="form-input" placeholder="Type a message..." style="flex: 1;" />
+        <button id="sendChatBtn" class="btn-primary" style="padding: 0 20px; border-radius: 8px; font-weight: 600;">Send</button>
       </div>
     </div>
   </div>
